@@ -1,0 +1,554 @@
+homeassistant:
+  customize:
+    package.node_anchors:
+      switch: &switch switch.lavatrice1pm
+      power: &power sensor.lavatrice1pm_power
+
+# recorder:
+#   include:
+#     entities:
+#       - sensor.energy_day_lavatrice
+#       - sensor.time_day_lavatrice
+#       - sensor.cycles_day_lavatrice
+
+sensor:
+  - platform: integration
+    source: *power
+    name: "Energy kWh Lavatrice"
+    unit_prefix: k
+    round: 2
+
+counter:
+  manutenzioni_lavatrice:
+    name: "Manutenzioni Lavatrice"
+    initial: 0
+    step: 1
+  detersivo_lavatrice:
+    name: "Detersivo Lavatrice"
+    initial: 0
+    step: 1
+  ammorbidente_lavatrice:
+    name: "Ammorbidente Lavatrice"
+    initial: 0
+    step: 1
+
+input_number:
+  tempo_innesco_lavatrice_m:
+    name: Tempo di Innesco Lavatrice M
+    icon: mdi:flash
+    min: 1
+    max: 60
+    step: 1.00
+    unit_of_measurement: "m"
+    mode: box
+  soglia_lavoro_lavatrice_w:
+    name: Soglia Lavoro Lavatrice W
+    icon: mdi:flash
+    min: 0
+    max: 5000
+    step: 1.00
+    unit_of_measurement: "w"
+    mode: box
+  mesi_manutenzione_lavatrice:
+    name: Mesi per manutenzione Lavatrice
+    min: 0
+    max: 12
+    step: 1
+    mode: box
+  lavaggi_manutenzione_lavatrice:
+    name: Lavaggi per manutenzione Lavatrice
+    min: 0
+    max: 1000
+    step: 1
+    mode: box
+  detersivo_acquistati_lavatrice:
+    name: Detersivo Acquistato
+    min: -100
+    max: 1000
+    step: 1
+    mode: box
+  detersivo_residui_lavatrice:
+    name: Soglia Detersivo residuo
+    min: 0
+    max: 50
+    step: 1
+    mode: box
+  ammorbidente_acquistati_lavatrice:
+    name: Ammorbidente Acquistato
+    min: -100
+    max: 1000
+    step: 1
+    mode: box
+  ammorbidente_residui_lavatrice:
+    name: Soglia Ammorbidente residuo
+    min: 0
+    max: 50
+    step: 1
+    mode: box
+
+input_boolean:
+  detersivo_lavatrice:
+    name: Detersivo Lavatrice
+  ammorbidente_lavatrice:
+    name: Ammorbidente Lavatrice
+  manutenzioni_lavatrice:
+    name: manutenzioni Lavatrice
+  notify_lavatrice:
+    name: Notifica Lavatrice
+  switch_lavatrice:
+    name: off/on switch lavatrice
+  controllo_panni:
+    name: off/on panni
+  check_ritirare_panni:
+
+utility_meter:
+  energy_day_lavatrice:
+    source: sensor.energy_kwh_lavatrice
+    cycle: daily
+  time_day_lavatrice:
+    source: sensor.stato_lavatrice
+    cycle: daily
+  cycles_day_lavatrice:
+    source: sensor.lavaggio_terminato
+    cycle: daily
+  energy_month_lavatrice:
+    source: sensor.energy_kwh_lavatrice
+    cycle: monthly
+  time_month_lavatrice:
+    source: sensor.stato_lavatrice
+    cycle: monthly
+  cycles_month_lavatrice:
+    source: sensor.lavaggio_terminato
+    cycle: monthly
+  energy_year_lavatrice:
+    source: sensor.energy_kwh_lavatrice
+    cycle: yearly
+  time_year_lavatrice:
+    source: sensor.stato_lavatrice
+    cycle: yearly
+  cycles_year_lavatrice:
+    source: sensor.lavaggio_terminato
+    cycle: yearly
+
+input_datetime:
+  manutenzione_lavatrice:
+    name: Manutenzione Lavatrice
+    has_date: true
+    has_time: true
+
+timer:
+  conferma_alexa_lavatrice:
+    duration: "00:05:00"
+
+script:
+  reset_sensori_lavatrice:
+    sequence:
+      - alias: Resetta contantori statistiche
+        service: utility_meter.calibrate
+        data:
+          value: "0"
+        target:
+          entity_id:
+            - sensor.time_year_lavatrice
+            - sensor.time_month_lavatrice
+            - sensor.time_day_lavatrice
+            - sensor.cycles_day_lavatrice
+            - sensor.energy_day_lavatrice
+            - sensor.cycles_month_lavatrice
+            - sensor.energy_month_lavatrice
+            - sensor.cycles_year_lavatrice
+            - sensor.energy_year_lavatrice
+
+template:
+  - binary_sensor:
+      - name: Lavatrice
+        icon: mdi:washing-machine
+        state: >-
+          {% set power = state_attr('sensor.energy_kwh_lavatrice', 'source') %}
+          {{ states(power) | int(0) > states('input_number.soglia_lavoro_lavatrice_w') | int(0) }}
+        delay_off: "00:{{ states('input_number.tempo_innesco_lavatrice_m') | int(0) }}:00"
+
+  - sensor:
+      - name: "Stato Lavatrice"
+        icon: mdi:history
+        state: >-
+          {% from 'history_stats_custom.jinja' import time_on %}
+          {{ time_on('binary_sensor.lavatrice') }}
+
+  - trigger:
+      - platform: time
+        at: "00:00:01"
+      - platform: state
+        entity_id:
+          - binary_sensor.lavatrice
+          - script.reset_sensori_lavatrice
+        from: "on"
+        to: "off"
+        for:
+          seconds: 2
+    sensor:
+      - name: Storico Lavatrice
+        state: "{{ now().strftime('%d/%m/%Y %H:%M') }}"
+        attributes:
+          Settimanale: >-
+            {% from 'history_stats_custom.jinja' import storico_statistiche, history %} 
+            {% set this_entity = state_attr('sensor.storico_lavatrice', 'Settimanale') %}
+            {% set consumo = states('sensor.energy_day_lavatrice') | float(0) | round(2) %}
+            {% set costo = (consumo * states('input_number.costo_energia_casa') | float(0)) | round(2, default=0) %}
+            {% set cicli = states('sensor.cycles_day_lavatrice') %}
+            {% set tempo = history(states('sensor.time_day_lavatrice')) | trim %}
+            {% set reset = trigger.entity_id == 'script.reset_sensori_lavatrice' %}
+            {{ storico_statistiche('giorni', this_entity, costo, consumo, cicli, tempo, reset) | from_json }}
+          Mensile: >-
+            {% from 'history_stats_custom.jinja' import storico_statistiche, history %} 
+            {% set this_entity = state_attr('sensor.storico_lavatrice', 'Mensile') %}
+            {% set consumo = states('sensor.energy_month_lavatrice') |float(0) | round(2) %}
+            {% set costo = (consumo * states('input_number.costo_energia_casa') | float(0)) | round(2, default=0) %}
+            {% set cicli = states('sensor.cycles_month_lavatrice') %}
+            {% set tempo =  history(states('sensor.time_month_lavatrice')) | trim %}
+            {% set reset = trigger.entity_id == 'script.reset_sensori_lavatrice' %}
+            {{ storico_statistiche('mesi', this_entity, costo, consumo, cicli, tempo, reset) | from_json }}
+
+  # Lavaggio Iniziato
+  - trigger:
+      - platform: state
+        entity_id: binary_sensor.lavatrice
+        from: "off"
+        to: "on"
+    sensor:
+      - name: Lavaggio Iniziato
+        state: "{{ as_timestamp(now()) }}"
+        attributes:
+          consumo_iniziale: "{{ states[state_attr('sensor.energy_day_lavatrice', 'source')].state }}"
+    action:
+      - alias: Togli stato panni da ritirare
+        service: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.check_ritirare_panni
+
+  # Panni ritirati
+  - trigger:
+      - platform: event
+        event_type: mobile_app_notification_action
+        event_data:
+          action: "clear_notification_lavatrice"
+      - platform: state
+        entity_id: input_boolean.check_ritirare_panni
+        from: "on"
+        to: "off"
+    action:
+      - alias: >-
+          Push: Cancella notifica push a tutti i device
+          Media Player: NO
+        event: elettrodomestici
+        event_data:
+          push: "true"
+          tag: "Lavaggio completato"
+          message: "clear_notification"
+      - alias: Cancella timer per alexa action
+        service: timer.cancel
+        target:
+          entity_id: timer.conferma_alexa_lavatrice
+      - alias: Togli stato panni da ritirare
+        service: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.check_ritirare_panni
+
+  # Rientro familiare
+  - trigger:
+      - alias: "Lavaggio è terminato mentre non c'erano persone in casa. Fai ripartire le notifiche quando rientra solo il primo membro della famiglia."
+        platform: template
+        value_template: >-
+          {% from 'personal.jinja' import persons %}
+          {% set output = namespace(state_home=[]) %}
+          {% for dict in persons() | from_json if is_state('input_boolean.check_ritirare_panni', 'on') and is_state('input_boolean.controllo_panni','on') and states[dict.person].state == 'home'%}
+              {% set output.state_home = output.state_home + [dict['person']] %}
+          {% endfor %}
+            {{ output.state_home | count == 1}}
+    action:
+      - if: "{{ trigger.from_state.state == 'not_home' and trigger.to_state.state == 'home' }}"
+        then:
+          - delay:
+              minutes: 1
+          - alias: >-
+              Push: solo persone che si trovano in casa altrimenti tutti
+              Media Player: Solo se persone presenti altrimenti imposta per attendere rientro in casa (da fare)
+            event: elettrodomestici
+            event_data:
+              push: "true"
+              tag: "Lavaggio completato"
+              title: "Lavatrice"
+              for_each: "home"
+              message: >-
+                {% from 'history_stats_custom.jinja' import last_use %}
+                Lavaggio di {{ last_use('sensor.lavaggio_iniziato', 'sensor.lavaggio_terminato', 'binary_sensor.lavatrice') | trim }} terminato in vostra assenza
+              notification_icon: "mdi:washing-machine"
+              media_player: "{{ 'true' if person_home | count > 0 else 'None' }}"
+              action1: "clear_notification_lavatrice"
+              title1: Conferma panni ritirati
+          - alias: Avvia timer per conferma alexa
+            service: timer.start
+            target:
+              entity_id: timer.conferma_alexa_lavatrice
+
+  # Lavaggio terminato
+  - trigger:
+      - platform: state
+        entity_id: binary_sensor.lavatrice
+        from: "on"
+        to: "off"
+    sensor:
+      - name: Lavaggio terminato
+        state: "{{ 1 if this.state | int(0) == 0 else this.state | int(0) + 1 }}"
+        attributes:
+          time: "{{ as_timestamp(now()) }}"
+    action:
+      - variables:
+          person_home: >-
+            {% from 'personal.jinja' import persons %}
+            {% set output = namespace(state_home=[]) %}
+            {% for dict in persons() | from_json if states[dict.person].state == 'home' %}
+              {%- set output.state_home = output.state_home + [dict['person']] -%}
+            {% endfor %}
+            {{ output.state_home }}
+
+      - alias: Aggiorna counter
+        repeat:
+          for_each:
+            - "counter.manutenzioni_lavatrice"
+            - "counter.detersivo_lavatrice"
+            - "counter.ammorbidente_lavatrice"
+          sequence:
+            - if: "{{ states(repeat.item) | float(0) > 0 }}"
+              then:
+                - alias: Aggiorna counter manutenzioni
+                  service: counter.decrement
+                  target:
+                    entity_id: "{{ repeat.item }}"
+
+      - alias: "NOTIFICA: lavaggio completo"
+        if: "{{ is_state('input_boolean.notify_lavatrice', 'on') }}"
+        then:
+          - alias: Dichiara panni da ritirare
+            service: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.check_ritirare_panni
+          - delay:
+              seconds: 1
+          - alias: >-
+              Push: solo persone che si trovano in casa altrimenti tutti
+              Media Player: Solo se persone presenti altrimenti imposta per attendere rientro in casa (da fare)
+            event: elettrodomestici
+            event_data:
+              push: "true"
+              tag: "Lavaggio completato"
+              title: "Lavatrice"
+              for_each: "home"
+              message: >-
+                {% from 'history_stats_custom.jinja' import last_use %}
+                Lavaggio Terminato in {{ last_use('sensor.lavaggio_iniziato', 'sensor.lavaggio_terminato', 'binary_sensor.lavatrice') | trim }}
+              notification_icon: "mdi:washing-machine"
+              media_player: "{{ 'true' if person_home | count > 0 else 'None' }}"
+              action1: "clear_notification_lavatrice"
+              title1: Conferma panni ritirati
+
+      - alias: Spegni switch lavatrice
+        if: "{{ is_state('input_boolean.switch_lavatrice', 'on') }}"
+        then:
+          - service: switch.turn_off
+            target:
+              entity_id: *switch
+
+  # MANUTENZIONE
+  - trigger:
+      - platform: state
+        entity_id:
+          - input_number.mesi_manutenzione_lavatrice
+          - input_number.lavaggi_manutenzione_lavatrice
+          - input_datetime.manutenzione_lavatrice
+        not_from:
+          - unknown
+          - unavailable
+      - platform: numeric_state
+        entity_id: counter.manutenzioni_lavatrice
+        below: 1
+        for:
+          seconds: 15
+      - platform: time
+        at: input_datetime.manutenzione_lavatrice
+    action:
+      - variables:
+          data_manutenzione: >-
+            {% set months_delta = now().month + states('input_number.mesi_manutenzione_lavatrice') | round(0) %}
+            {% if months_delta <= 12 %}
+              {{ now().strftime('%Y-') ~ months_delta + now().strftime('-%d ') + ('12:00:00') }}
+            {% else %}
+              {{ (now().year + 1) ~ '-' ~ (months_delta-12) + now().strftime('-%d ') + ('12:00:00') }}
+            {% endif %}
+      - alias: Imposta mesi e cicli manutenzione
+        if: "{{ trigger.entity_id == 'input_number.mesi_manutenzione_lavatrice' or trigger.entity_id == 'input_number.lavaggi_manutenzione_lavatrice' }}"
+        then:
+          - alias: Imposta mese per manutenzione
+            service: input_datetime.set_datetime
+            target:
+              entity_id: input_datetime.manutenzione_lavatrice
+            data:
+              datetime: "{{ data_manutenzione }}"
+          - alias: Imposta numero lavaggi per manutenzione
+            service: counter.set_value
+            data:
+              value: "{{ states('input_number.lavaggi_manutenzione_lavatrice') }}"
+            target:
+              entity_id: counter.manutenzioni_lavatrice
+      - alias: Invia notifiche manutenzioni
+        if:
+          - or:
+              - "{{ trigger.entity_id == 'counter.manutenzioni_lavatrice' and is_state('input_boolean.manutenzioni_lavatrice', 'on') }}"
+              - "{{ trigger.entity_id == 'input_datetime.manutenzione_lavatrice' and is_state('input_boolean.manutenzioni_lavatrice', 'on') }}"
+        then:
+          - alias: >-
+              Push: A tutti
+              Media Player: nessuno
+            event: elettrodomestici
+            event_data:
+              push: "true"
+              tag: "lavatrice_manutenzione"
+              title: "Lavatrice"
+              message: "Rihiesta pulizia lavatrice"
+              notification_icon: "mdi:washing-machine"
+          - alias: Reimposta mesi e lavaggi manutenzione
+            parallel:
+              - alias: Imposta mese per manutenzione
+                service: input_datetime.set_datetime
+                target:
+                  entity_id: input_datetime.manutenzione_lavatrice
+                data:
+                  datetime: "{{ data_manutenzione }}"
+              - alias: Imposta numero lavaggi per manutenzione
+                service: counter.set_value
+                data:
+                  value: "{{ states('input_number.lavaggi_manutenzione_lavatrice') }}"
+                target:
+                  entity_id: counter.manutenzioni_lavatrice
+
+  # CONSUMABILI
+  - trigger:
+      - platform: template
+        value_template: "{{ states('counter.detersivo_lavatrice') | int(0) == states('input_number.detersivo_residui_lavatrice') | int(0) }}"
+        id: "detersivo"
+      - platform: template
+        value_template: "{{ states('counter.ammorbidente_lavatrice') | int(0) == states('input_number.ammorbidente_residui_lavatrice') | int(0) }}"
+        id: "ammorbidente"
+      - platform: state
+        entity_id:
+          - input_number.detersivo_acquistati_lavatrice
+          - input_number.ammorbidente_acquistati_lavatrice
+      - platform: event
+        event_type: shopping_list_updated
+        event_data:
+          action: "remove"
+    action:
+      - repeat:
+          for_each:
+            - "detersivo"
+            - "ammorbidente"
+          sequence:
+            - alias: Richiedi inserimento quantità consumabile con notifica per rimozione da lista della spesa
+              if: "{{ trigger.event.data.item.name == repeat.item.capitalize() + ' lavatrice - add.automatico' }}"
+              then:
+                - alias: >-
+                    Push: A tutti
+                    Media Player: nessuno
+                  event: elettrodomestici
+                  event_data:
+                    push: "true"
+                    tag: "{{ repeat.item }}_lavatrice"
+                    title: "Lavatrice"
+                    message: "{{ repeat.item.capitalize() }} per lavatrice acquistato"
+                    notification_icon: "mdi:shopping"
+                    action1: "URI"
+                    title1: "Aggiungi {{ repeat.item }}"
+                    uri1: "entityId:input_number.{{ repeat.item }}_acquistati_lavatrice"
+            - alias: Aggiungi consumabile a lista della spesa
+              if: "{{ trigger.id == repeat.item and is_state('input_boolean.' + repeat.item + '_lavatrice', 'on') }}"
+              then:
+                - alias: Aggiungi consumabile alla lista della spesa
+                  service: shopping_list.add_item
+                  data:
+                    name: "{{ repeat.item.capitalize() }} lavatrice - add.automatico"
+            - alias: Aggiungi/rimuovi consumabile disponibili
+              if: "{{ trigger.entity_id == 'input_number.' + repeat.item + '_acquistati_lavatrice' }}"
+              then:
+                - alias: Imposta consumabile disponibili
+                  service: counter.set_value
+                  data:
+                    value: "{{ max(0, states('input_number.' + repeat.item + '_acquistati_lavatrice') | int(0) + states('counter.' + repeat.item + '_lavatrice') | int(0)) }}"
+                  target:
+                    entity_id: "counter.{{ repeat.item }}_lavatrice"
+                - alias: Ripristina input_number a 0
+                  service: input_number.set_value
+                  data:
+                    value: 0
+                  target:
+                    entity_id: "input_number.{{ repeat.item }}_acquistati_lavatrice"
+                - alias: >-
+                    Push: Cancella notifica consumabili a tutti i device
+                    Media Player: NO
+                  event: elettrodomestici
+                  event_data:
+                    push: "true"
+                    tag: "{{repeat.item}}_lavatrice"
+                    message: "clear_notification"
+
+automation:
+  - alias: "Elettrodomestici: conferma alexa lavatrice"
+    id: "conferma_alexa_lavatrice"
+    mode: parallel
+    trigger:
+      - platform: state
+        entity_id:
+          - binary_sensor.lavatrice
+        from: "on"
+        to: "off"
+        for:
+          minutes: 5
+      - platform: event
+        event_type: timer.finished
+        event_data:
+          entity_id: timer.conferma_alexa_lavatrice
+    condition:
+      - "{{ states('script.activate_alexa_actionable_notification') != 'unknown' }}"
+      - "{{ is_state('input_boolean.controllo_panni','on') }}"
+      - "{{ is_state('input_boolean.check_ritirare_panni', 'on') }}"
+      - >-
+        {% from 'personal.jinja' import persons %}
+        {% set output = namespace(state_home=[]) %}
+        {% for dict in persons() | from_json if states[dict.person].state == 'home' %}
+          {%- set output.state_home = output.state_home + [dict['person']] -%}
+        {% endfor %}
+        {{ output.state_home |count > 0 }}
+    action:
+      - service: script.activate_alexa_actionable_notification
+        data:
+          text: "Hai tolto i panni dalla lavatrice?"
+          event_id: panni_lavatrice
+          alexa_device: "{{ states.media_player | selectattr('attributes.source_list', 'defined')  | map(attribute='entity_id')  |select('in', integration_entities('alexa_media')) | list | random }}"
+      - wait_for_trigger:
+          - platform: event
+            event_type: alexa_actionable_notification
+            event_data:
+              event_id: panni_lavatrice
+          - platform: state
+            entity_id:
+              - binary_sensor.lavatrice
+            to: "on"
+      - if: "{{ 'ResponseYes' == wait.trigger.event.data.event_response or wait.trigger.entity_id == 'binary_sensor.lavatrice' }}"
+        then:
+          - alias: Togli stato panni da ritirare
+            service: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.check_ritirare_panni
+        else:
+          - service: timer.start
+            target:
+              entity_id: timer.conferma_alexa_lavatrice
