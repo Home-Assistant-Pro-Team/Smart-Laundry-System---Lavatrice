@@ -3,1039 +3,1070 @@ triggers_update: all
 styles:
   card:
     - padding: 10px
+    - height: 460px
   grid:
     - grid-template-areas: |
         " title  title   "
         " statis  icon    "
-        " graph graph "
-    - grid-template-columns: 0.9fr 2fr
-    - grid-template-rows: repeat(3, 0fr)
+    - grid-template-columns: repeat(2, 1fr)
+    - grid-template-rows: repeat(2, 1fr)
   custom_fields:
+    statis:
+      - margin-top: '-40%'
     icon:
+      - margin-top: '-56%'
+      - margin-left: 5%
       - width: 150%
-    graph:
-      - margin-top: '-1%'
 custom_fields:
-  graph:
-    card:
-      type: custom:apexcharts-card
-      card_mod:
-        style: |
-          ha-card {  
-            background: non;
-            border: 100px; 
-            border-radius: 0px;
-            }                
-      graph_span: 4d
-      span:
-        end: day
-        offset: '-1sec'
-      apex_config:
-        chart:
-          type: area
-          height: 150
-        stroke:
-          show: true
-          width: 1
-          curve: smooth
-        legend:
-          show: false
-        xaxis:
-          labels:
-            format: dd-MM
-        fill:
-          type: gradient
-          gradient:
-            shadeIntensity: 0.1
-            opacityFrom: 0.25
-            opacityTo: 1
-            inverseColors: true
-      series:
-        - color: var(--input-fill-color)
-          entity: sensor.cycles_day_lavatrice
-          type: column
-          group_by:
-            func: max
-            duration: 24h
-        - color: var(--state-icon-active-color)
-          entity: sensor.energy_day_lavatrice
-          type: column
-          group_by:
-            func: max
-            duration: 24h
-        - color: var(--state-icon-color)
-          entity: sensor.time_day_lavatrice
-          type: column
-          group_by:
-            func: max
-            duration: 24h
   title:
     card:
       type: vertical-stack
       cards:
-        - type: custom:mushroom-title-card
-          title: LAVATRICE
-          subtitle: >-
-            {% from 'history_stats_custom.jinja' import last_use %} {% set fine
-            =  state_attr('sensor.lavaggio_terminato','time') |
-            timestamp_custom('%H:%M') %} {% if
-            is_state('input_boolean.check_ritirare_panni', 'on') %}  {{ 'Panni
-            da ritirare dalle ' + fine }} {%elif
-            is_state('binary_sensor.lavatrice', 'on') %}
-              Lavatrice attiva da {{last_use('sensor.lavaggio_iniziato','sensor.lavaggio_terminato','binary_sensor.lavatrice')|
-            trim}} {%else%}
-              {{ 'Lavaggio terminato alle ' + fine + ' in ' + last_use('sensor.lavaggio_iniziato','sensor.lavaggio_terminato','binary_sensor.lavatrice')|
-            trim}} {% endif %}
-          alignment: center
-          title_tap_action:
-            action: none
-          subtitle_tap_action:
-            action: none
-          card_mod:
-            style:
-              .: |
-                ha-card {
-                  margin-top: -2%;
-                }
-                 
-                  
         - type: horizontal-stack
           cards:
-            - type: custom:mushroom-chips-card
-              alignment: start
-              chips:
-                - type: template
-                  icon: hass:chart-line
-                  card_mod:
-                    style: |
-                      ha-card {
-                        --chip-box-shadow: none;
-                        --chip-background: var(--secondary-background-color);
-                        --chip-border-width: 1px;
-                      }
-                  tap_action:
-                    action: fire-dom-event
-                    browser_mod:
-                      service: browser_mod.popup
-                      data:
-                        dismissable: false
-                        timeout: 30000
-                        right_button: Indietro
-                        content:
-                          type: markdown
-                          content: >
-
-                            {% from 'history_stats_custom.jinja' import
-                            last_use, history %}
-
-                            Generale
-
-                            -
-
-                            {% set fine = 
-                            state_attr('sensor.lavaggio_terminato','time') |
-                            timestamp_custom('%d/%m/%Y alle %H:%M') %}
-
-                            {% if is_state('input_boolean.check_ritirare_panni',
-                            'on') %}
-
-                            {{ '### Panni da ritirare dal ' + fine }}
-
-                            {%elif is_state('binary_sensor.lavatrice', 'on') %}
-                              {{ '### Lavatrice in funzione' }}
-                            {%else%}
-                             {{ 'Ultimo lavaggio terminato il ' + fine }}
-                            {% endif %}
-
-
-
-                            | Periodo |Costo |Consumo | Tempo | Cicli |
-
-                            |:--------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:
-                            | :--------------------------: |
-                            :-------------------------------------------------------------------:
-                            |
-
-                            |<b>Ultimo|{{
-                            ((states[state_attr('sensor.energy_day_lavatrice',
-                            'source')].state | float(0) -
-                            state_attr('sensor.lavaggio_iniziato','consumo_iniziale')|float(0))
-                            * (states('input_number.costo_energia_casa') |
-                            float(0))) | round(2, default=0) }} € |{{
-                            (states[state_attr('sensor.energy_day_lavatrice',
-                            'source')].state | float(0) -
-                            state_attr('sensor.lavaggio_iniziato',
-                            'consumo_iniziale') | float(0)) | round(2)}} kWh|
-                            {{last_use('sensor.lavaggio_iniziato','sensor.lavaggio_terminato','binary_sensor.lavatrice')|
-                            trim}} |
-                            {{states(state_attr('sensor.energy_kwh_lavatrice',
-                            'source'))  | int (0) ~ ' W' if
-                            is_state('binary_sensor.lavatrice', 'on')}} |
-
-                            |<b>Oggi  |{{ (states('sensor.energy_day_lavatrice')
-                            | float(0) *
-                            states('input_number.costo_energia_casa') |
-                            float(0)) | round(2, default=0) }} €|{{
-                            states('sensor.energy_day_lavatrice') | float(0) |
-                            round(2) }}
-                            KWh                                                                                                    
-                            | {{ history(states('sensor.time_day_lavatrice')) |
-                            trim}}                                             |
-                            {{states('sensor.cycles_day_lavatrice')}} |
-
-                            |<b>Ieri  |{{
-                            (state_attr('sensor.energy_day_lavatrice',
-                            'last_period') | float(0) *
-                            states('input_number.costo_energia_casa') |
-                            float(0)) | round(2, default=0) }} €      
-                            |{{state_attr('sensor.energy_day_lavatrice',
-                            'last_period') |float(0) | round(2) }}
-                            KWh                                                                                   
-                            | {{ history(state_attr('sensor.time_day_lavatrice',
-                            'last_period')) | trim }}                         |
-                            {{state_attr('sensor.cycles_day_lavatrice','last_period')}}                                         
-                            |
-
-                            |<b>Mese  |{{
-                            (states('sensor.energy_month_lavatrice') | float(0)
-                            * states('input_number.costo_energia_casa') |
-                            float(0)) | round(2, default=0) }} €   
-                            |{{states('sensor.energy_month_lavatrice') |float(0)
-                            | round(2)}}
-                            KWh                                                                                                     
-                            | {{history(states('sensor.time_month_lavatrice')) |
-                            trim}}                                            |
-                            {{states('sensor.cycles_month_lavatrice')}}                         
-                            |
-
-                            |<b>Anno  |{{
-                            (states('sensor.energy_year_lavatrice') | float(0) *
-                            states('input_number.costo_energia_casa') |
-                            float(0)) | round(2, default=0) }} €   
-                            |{{states('sensor.energy_year_lavatrice') |float(0)
-                            | round(2)}}
-                            KWh                                                                                                      
-                            | {{history(states('sensor.time_year_lavatrice')) |
-                            trim }}                                            |
-                            {{states('sensor.cycles_year_lavatrice')}}                          
-                            |
-
-                            ---
-
-                            Settimanale
-
-                            -
-
-                            {% set settimanale =
-                            state_attr('sensor.storico_lavatrice','Settimanale')
-                            %}
-
-                            | Giorno      | Costo                            |
-                            Consumo                            |
-                            Tempo                            |
-                            Cicli                            |
-
-                            | :---------- | :------------------------------: |
-                            :--------------------------------: |
-                            :------------------------------: |
-                            :------------------------------: |
-
-                            | <b>Lunedi   | {{ settimanale.Lunedi.costo }}    |
-                            {{ settimanale.Lunedi.consumo }}   | {{
-                            settimanale.Lunedi.tempo }}   | {{
-                            settimanale.Lunedi.cicli }}   |
-
-                            | <b>Martedi  | {{ settimanale.Martedi.costo }}  |
-                            {{ settimanale.Martedi.consumo }}  | {{
-                            settimanale.Martedi.tempo }}  | {{
-                            settimanale.Martedi.cicli }}  |
-
-                            | <b>Mercoledi| {{ settimanale.Mercoledi.costo }}|
-                            {{ settimanale.Mercoledi.consumo }}| {{
-                            settimanale.Mercoledi.tempo }}| {{
-                            settimanale.Mercoledi.cicli }}|
-
-                            | <b>Giovedi  | {{ settimanale.Giovedi.costo }}  |
-                            {{ settimanale.Giovedi.consumo }}  | {{
-                            settimanale.Giovedi.tempo }}  | {{
-                            settimanale.Giovedi.cicli }}  |
-
-                            | <b>Venerdi  | {{ settimanale.Venerdi.costo }}  |
-                            {{ settimanale.Venerdi.consumo }}  | {{
-                            settimanale.Venerdi.tempo }}  | {{
-                            settimanale.Venerdi.cicli }}  |
-
-                            | <b>Sabato   | {{ settimanale.Sabato.costo }}   |
-                            {{ settimanale.Sabato.consumo }}   | {{
-                            settimanale.Sabato.tempo }}   | {{
-                            settimanale.Sabato.cicli }}   |
-
-                            | <b>Domenica | {{ settimanale.Domenica.costo }} |
-                            {{ settimanale.Domenica.consumo }} | {{
-                            settimanale.Domenica.tempo }} | {{
-                            settimanale.Domenica.cicli }} |
-
-                            ---
-
-                            Mensile
-
-                            -
-
-                            {% set mensile =
-                            state_attr('sensor.storico_lavatrice','Mensile') %}
-
-                            | Mese        | Costo                        |
-                            Consumo                        |
-                            Tempo                        |
-                            Cicli                        |
-
-                            | :---------- | :--------------------------: |
-                            :----------------------------: |
-                            :--------------------------: |
-                            :--------------------------: |
-
-                            | <b>Gennaio  | {{ mensile.Gennaio.costo }}  | {{
-                            mensile.Gennaio.consumo }}  | {{
-                            mensile.Gennaio.tempo }}  | {{ mensile.Gennaio.cicli
-                            }}  |
-
-                            | <b>Febbraio | {{ mensile.Febbraio.costo }} | {{
-                            mensile.Febbraio.consumo }} | {{
-                            mensile.Febbraio.tempo }} | {{
-                            mensile.Febbraio.cicli }} |
-
-                            | <b>Marzo    | {{ mensile.Marzo.costo }}    | {{
-                            mensile.Marzo.consumo }}    | {{ mensile.Marzo.tempo
-                            }}    | {{ mensile.Marzo.cicli }}    |
-
-                            | <b>Aprile   | {{ mensile.Aprile.costo }}   | {{
-                            mensile.Aprile.consumo }}   | {{
-                            mensile.Aprile.tempo }}   | {{ mensile.Aprile.cicli
-                            }}   |
-
-                            | <b>Maggio   | {{ mensile.Maggio.costo }}   | {{
-                            mensile.Maggio.consumo }}   | {{
-                            mensile.Maggio.tempo }}   | {{ mensile.Maggio.cicli
-                            }}   |
-
-                            | <b>Giugno   | {{ mensile.Giugno.costo }}   | {{
-                            mensile.Giugno.consumo }}   | {{
-                            mensile.Giugno.tempo }}   | {{ mensile.Giugno.cicli
-                            }}   |
-
-                            | <b>Luglio   | {{ mensile.Luglio.costo }}   | {{
-                            mensile.Luglio.consumo }}   | {{
-                            mensile.Luglio.tempo }}   | {{ mensile.Luglio.cicli
-                            }}   |
-
-                            | <b>Agosto   | {{ mensile.Agosto.costo }}   | {{
-                            mensile.Agosto.consumo }}   | {{
-                            mensile.Agosto.tempo }}   | {{ mensile.Agosto.cicli
-                            }}   |
-
-                            | <b>Settembre| {{ mensile.Settembre.costo }}| {{
-                            mensile.Settembre.consumo }}| {{
-                            mensile.Settembre.tempo }}| {{
-                            mensile.Settembre.cicli }}|
-
-                            | <b>Ottobre  | {{ mensile.Ottobre.costo }}  | {{
-                            mensile.Ottobre.consumo }}  | {{
-                            mensile.Ottobre.tempo }}  | {{ mensile.Ottobre.cicli
-                            }}  |
-
-                            | <b>Novembre | {{ mensile.Novembre.costo }} | {{
-                            mensile.Novembre.consumo }} | {{
-                            mensile.Novembre.tempo }} | {{
-                            mensile.Novembre.cicli }} |
-
-                            | <b>Dicembre | {{ mensile.Dicembre.costo }} | {{
-                            mensile.Dicembre.consumo }} | {{
-                            mensile.Dicembre.tempo }} | {{
-                            mensile.Dicembre.cicli }} |
-
-
-                            Ultimo reset statistiche il {{
-                            as_local(state_attr('script.reset_sensori_lavatrice',
-                            'last_triggered')).strftime('%d/%m/%Y %H:%M') }}
+            - type: vertical-stack
+              cards:
+                - type: horizontal-stack
+                  cards:
+                    - type: custom:mushroom-chips-card
+                      alignment: start
+                      chips:
+                        - type: template
+                          icon: hass:chart-line
                           card_mod:
-                            style:
-                              ha-markdown $: |
-                                table {
-                                  width: 100%;
-                                  border-spacing: 0;
-                                }
-                - type: template
-                  icon: mdi:information-outline
-                  card_mod:
-                    style: |
-                      ha-card {
-                        --chip-box-shadow: none;
-                        --chip-background: var(--secondary-background-color);
-                        --chip-border-width: 1px;
-                      }
-                  tap_action:
-                    action: fire-dom-event
-                    browser_mod:
-                      service: browser_mod.popup
-                      data:
-                        dismissable: false
-                        timeout: 30000
-                        right_button: Indietro
-                        content:
-                          type: markdown
-                          content: >+
+                            style: |
+                              ha-card {
+                                --chip-box-shadow: none;
+                                --chip-background: var(--secondary-background-color);
+                                --chip-border-width: 1px;
+                              }
+                          tap_action:
+                            action: fire-dom-event
+                            browser_mod:
+                              service: browser_mod.popup
+                              data:
+                                dismissable: false
+                                timeout: 30000
+                                right_button: Indietro
+                                content:
+                                  type: markdown
+                                  content: >
 
-                            {% from 'history_stats_custom.jinja' import
-                            last_use, history %} #### Manutenzione
+                                    {% from 'history_stats_custom.jinja' import
+                                    last_use, history %}
 
-                            |   |  |
+                                    Generale
 
-                            |:--              |
-                            ---:                                               |
+                                    -
 
-                            |Avviso |  {{
-                            iif(is_state('input_boolean.manutenzioni_lavatrice',
-                            'on'), 'Attivo', 'Non Attivo') }} 
+                                    {% set fine = 
+                                    state_attr('sensor.lavaggio_terminato','time')
+                                    | timestamp_custom('%d/%m/%Y alle %H:%M') %}
 
-                            |Lavaggi residui: |
-                            {{states('counter.manutenzioni_lavatrice')|int(0)}}      
-                            |
+                                    {% if
+                                    is_state('input_boolean.check_ritirare_panni',
+                                    'on') %}
 
-                            |Scadenza:       
-                            |{{states('input_datetime.manutenzione_lavatrice')}}
-                            |
+                                    {{ '### Panni da ritirare dal ' + fine }}
 
-                            ---
+                                    {%elif is_state('binary_sensor.lavatrice',
+                                    'on') %}
+                                      {{ '### Lavatrice in funzione' }}
+                                    {%else%}
+                                     {{ 'Ultimo lavaggio terminato il ' + fine }}
+                                    {% endif %}
 
-                            #### Detersivo
 
-                            |    |     |
 
-                            |:-- | --: |
+                                    | Periodo |Costo |Consumo | Tempo | Cicli |
 
-                            |Avviso           | {{
-                            iif(is_state('input_boolean.detersivo_lavatrice',
-                            'on'), 'Attivo', 'Non Attivo') }} 
+                                    |:--------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:
+                                    | :--------------------------: |
+                                    :-------------------------------------------------------------------:
+                                    |
 
-                            |N. Detersivo per avviso  | {{
-                            states('input_number.detersivo_residui_lavatrice') |
-                            int(0) }}
+                                    |<b>Ultimo|{{
+                                    ((states[state_attr('sensor.energy_day_lavatrice',
+                                    'source')].state | float(0) -
+                                    state_attr('sensor.lavaggio_iniziato','consumo_iniziale')|float(0))
+                                    * (states('input_number.costo_energia_casa')
+                                    | float(0))) | round(2, default=0) }} € |{{
+                                    (states[state_attr('sensor.energy_day_lavatrice',
+                                    'source')].state | float(0) -
+                                    state_attr('sensor.lavaggio_iniziato',
+                                    'consumo_iniziale') | float(0)) | round(2)}}
+                                    kWh|
+                                    {{last_use('sensor.lavaggio_iniziato','sensor.lavaggio_terminato','binary_sensor.lavatrice')|
+                                    trim}} |
+                                    {{states(state_attr('sensor.energy_kwh_lavatrice',
+                                    'source'))  | int (0) ~ ' W' if
+                                    is_state('binary_sensor.lavatrice', 'on')}}
+                                    |
 
-                            |Detersivo residui:    |
-                            {{states('counter.detersivo_lavatrice')|int(0)}} 
+                                    |<b>Oggi  |{{
+                                    (states('sensor.energy_day_lavatrice') |
+                                    float(0) *
+                                    states('input_number.costo_energia_casa') |
+                                    float(0)) | round(2, default=0) }} €|{{
+                                    states('sensor.energy_day_lavatrice') |
+                                    float(0) | round(2) }}
+                                    KWh                                                                                                    
+                                    | {{
+                                    history(states('sensor.time_day_lavatrice'))
+                                    |
+                                    trim}}                                            
+                                    | {{states('sensor.cycles_day_lavatrice')}}
+                                    |
 
-                            ---
+                                    |<b>Ieri  |{{
+                                    (state_attr('sensor.energy_day_lavatrice',
+                                    'last_period') | float(0) *
+                                    states('input_number.costo_energia_casa') |
+                                    float(0)) | round(2, default=0) }} €      
+                                    |{{state_attr('sensor.energy_day_lavatrice',
+                                    'last_period') |float(0) | round(2) }}
+                                    KWh                                                                                   
+                                    | {{
+                                    history(state_attr('sensor.time_day_lavatrice',
+                                    'last_period')) | trim
+                                    }}                         |
+                                    {{state_attr('sensor.cycles_day_lavatrice','last_period')}}                                         
+                                    |
 
-                            #### Ammorbidente
+                                    |<b>Mese  |{{
+                                    (states('sensor.energy_month_lavatrice') |
+                                    float(0) *
+                                    states('input_number.costo_energia_casa') |
+                                    float(0)) | round(2, default=0) }} €   
+                                    |{{states('sensor.energy_month_lavatrice')
+                                    |float(0) | round(2)}}
+                                    KWh                                                                                                     
+                                    |
+                                    {{history(states('sensor.time_month_lavatrice'))
+                                    |
+                                    trim}}                                           
+                                    |
+                                    {{states('sensor.cycles_month_lavatrice')}}                         
+                                    |
 
-                            |    |     |
+                                    |<b>Anno  |{{
+                                    (states('sensor.energy_year_lavatrice') |
+                                    float(0) *
+                                    states('input_number.costo_energia_casa') |
+                                    float(0)) | round(2, default=0) }} €   
+                                    |{{states('sensor.energy_year_lavatrice')
+                                    |float(0) | round(2)}}
+                                    KWh                                                                                                      
+                                    |
+                                    {{history(states('sensor.time_year_lavatrice'))
+                                    | trim
+                                    }}                                           
+                                    |
+                                    {{states('sensor.cycles_year_lavatrice')}}                          
+                                    |
 
-                            |:-- | --: |
+                                    ---
 
-                            |Avviso           | {{
-                            iif(is_state('input_boolean.ammorbidente_lavatrice',
-                            'on'), 'Attivo', 'Non Attivo') }} 
+                                    Settimanale
 
-                            |N. Ammorbidente per avviso  | {{
-                            states('input_number.ammorbidente_residui_lavatrice')
-                            | int(0) }}
+                                    -
 
-                            |Ammorbidente residui:    |
-                            {{states('counter.ammorbidente_lavatrice')|int(0)}} 
+                                    {% set settimanale =
+                                    state_attr('sensor.storico_lavatrice','Settimanale')
+                                    %}
 
-                          card_mod:
-                            style:
-                              ha-markdown $: |
-                                table {
-                                  width: 100%;
-                                  border-spacing: 0;
-                                }
-                - type: template
-                  icon: hass:cog-outline
-                  card_mod:
-                    style: |
-                      ha-card {
-                        --chip-box-shadow: none;
-                        --chip-background: var(--secondary-background-color);
-                        --chip-border-width: 1px;
-                      }
-                  tap_action:
-                    action: fire-dom-event
-                    browser_mod:
-                      service: browser_mod.popup
-                      data:
-                        dismissable: false
-                        timeout: 30000
-                        right_button: Indietro
-                        content:
-                          type: vertical-stack
-                          cards:
-                            - type: custom:vertical-stack-in-card
-                              card_mod:
-                                style: |
-                                  ha-card {
-                                  --ha-card-border-width: 1px;
-                                  }
-                              cards:
-                                - type: horizontal-stack
-                                  cards:
-                                    - type: custom:mushroom-template-card
-                                      primary: Assorbimento
-                                      entity: input_number.soglia_lavoro_lavatrice_w
-                                      secondary: 'Attuali: {{states(entity)|int(0)}} W'
-                                      icon: mdi:power-plug
-                                      tap_action:
-                                        action: fire-dom-event
-                                        browser_mod:
-                                          service: browser_mod.more_info
-                                          data:
-                                            entity: input_number.soglia_lavoro_lavatrice_w
-                                            ignore_popup_card: true
-                                      style: |
-                                        ha-card {  
-                                          background: var(--ha-card-background);
-                                          border: 100px; 
-                                          border-radius: 0px;
-                                          }
-                                    - type: custom:mushroom-number-card
-                                      display_mode: buttons
-                                      secondary_info: none
-                                      entity: input_number.soglia_lavoro_lavatrice_w
-                                      layout: horizontal
-                                      primary_info: none
-                                      icon_type: none
-                                      style: |
-                                        ha-card {  
-                                          background: var(--ha-card-background);
-                                          border: 100px; 
-                                          border-radius: 0px;
-                                          }
-                                - type: horizontal-stack
-                                  cards:
-                                    - type: custom:mushroom-template-card
-                                      primary: Ritardo
-                                      secondary: 'Impostato: {{states(entity)|int(0)}} m'
-                                      icon: mdi:timer
-                                      style: |
-                                        ha-card {  
-                                          background: var(--ha-card-background);
-                                          border: 100px; 
-                                          border-radius: 0px;
-                                          }
-                                      tap_action:
-                                        action: fire-dom-event
-                                        browser_mod:
-                                          service: browser_mod.more_info
-                                          data:
-                                            entity: input_number.tempo_innesco_lavatrice_m
-                                            ignore_popup_card: true
-                                      entity: input_number.tempo_innesco_lavatrice_m
-                                    - type: custom:mushroom-number-card
-                                      display_mode: buttons
-                                      secondary_info: none
-                                      entity: input_number.tempo_innesco_lavatrice_m
-                                      layout: horizontal
-                                      primary_info: none
-                                      icon_type: none
-                                      style: |
-                                        ha-card {  
-                                          background: var(--ha-card-background);
-                                          border: 100px; 
-                                          border-radius: 0px;
-                                          }
-                            - type: custom:vertical-stack-in-card
-                              card_mod:
-                                style: |
-                                  ha-card {
-                                  --ha-card-border-width: 1px;
-                                  }
-                              cards:
-                                - type: custom:mushroom-entity-card
-                                  entity: input_boolean.notify_lavatrice
-                                  icon: mdi:message
-                                  name: Notifiche
-                                  tap_action:
-                                    action: toggle
-                                  style: |
-                                    ha-card {  
-                                      background: var(--ha-card-background);
-                                      border: 100px; 
-                                      border-radius: 0px;
-                                      }
-                                - type: conditional
-                                  conditions:
-                                    - condition: state
-                                      entity: input_boolean.notify_lavatrice
-                                      state: 'on'
-                                  card:
-                                    type: custom:mushroom-entity-card
-                                    entity: input_boolean.controllo_panni
-                                    icon: mdi:tshirt-v
-                                    name: Stato indumenti
-                                    tap_action:
-                                      action: toggle
-                                    style: |
-                                      ha-card {  
-                                        background: var(--ha-card-background);
-                                        border: 100px; 
-                                        border-radius: 0px;
-                                        }
-                                - type: conditional
-                                  conditions:
-                                    - condition: state
-                                      entity: input_boolean.notify_lavatrice
-                                      state: 'on'
-                                    - condition: state
-                                      entity: input_boolean.controllo_panni
-                                      state: 'on'
-                                  card:
-                                    type: custom:mushroom-entity-card
-                                    entity: >-
-                                      automation.elettrodomestici_conferma_alexa_lavatrice
-                                    name: Conferma indumenti con Alexa
-                                    icon: mdi:speaker
-                                    tap_action:
-                                      action: toggle
-                                    style: |
-                                      ha-card {  
-                                        background: var(--ha-card-background);
-                                        border: 100px; 
-                                        border-radius: 0px;
-                                        }
-                            - type: custom:vertical-stack-in-card
-                              card_mod:
-                                style: |
-                                  ha-card {
-                                  --ha-card-border-width: 1px;
-                                  }
-                              cards:
-                                - type: custom:mushroom-entity-card
-                                  entity: input_boolean.manutenzioni_lavatrice
-                                  tap_action:
-                                    action: toggle
-                                  name: 'Manutenzione '
-                                  icon: mdi:toolbox
-                                  style: |
-                                    ha-card {  
-                                      background: var(--ha-card-background);
-                                      border: 100px; 
-                                      border-radius: 0px;
-                                      }
-                                - type: conditional
-                                  conditions:
-                                    - condition: state
-                                      entity: input_boolean.manutenzioni_lavatrice
-                                      state: 'on'
-                                  card:
-                                    type: horizontal-stack
-                                    cards:
-                                      - type: custom:mushroom-template-card
-                                        primary: Imposta lavaggi
-                                        secondary: >
-                                          Lavaggi rimanenti:
-                                          {{states('counter.manutenzioni_lavatrice')|int(0)}}
-                                        icon: ''
-                                        style: |
-                                          ha-card {  
-                                            background: var(--ha-card-background);
-                                            border: 100px; 
-                                            border-radius: 0px;
-                                            }
-                                        tap_action:
-                                          action: fire-dom-event
-                                          browser_mod:
-                                            service: browser_mod.more_info
-                                            data:
-                                              entity: >-
-                                                input_number.lavaggi_manutenzione_lavatrice
-                                              ignore_popup_card: true
-                                      - type: custom:mushroom-number-card
-                                        display_mode: buttons
-                                        secondary_info: none
-                                        entity: >-
-                                          input_number.lavaggi_manutenzione_lavatrice
-                                        layout: horizontal
-                                        primary_info: none
-                                        icon_type: none
-                                        style: |
-                                          ha-card {  
-                                            background: var(--ha-card-background);
-                                            border: 100px; 
-                                            border-radius: 0px;
-                                            }
-                                - type: conditional
-                                  conditions:
-                                    - condition: state
-                                      entity: input_boolean.manutenzioni_lavatrice
-                                      state: 'on'
-                                  card:
-                                    type: horizontal-stack
-                                    cards:
-                                      - type: custom:mushroom-template-card
-                                        primary: Imposta mesi
-                                        secondary: >
-                                          Scadenza:
-                                          {{states('input_datetime.manutenzione_lavatrice')}}
-                                        icon: ''
-                                        style: |
-                                          ha-card {  
-                                            background: var(--ha-card-background);
-                                            border: 100px; 
-                                            border-radius: 0px;
-                                            }
-                                        tap_action:
-                                          action: fire-dom-event
-                                          browser_mod:
-                                            service: browser_mod.more_info
-                                            data:
-                                              entity: input_number.mesi_manutenzione_lavatrice
-                                              ignore_popup_card: true
-                                      - type: custom:mushroom-number-card
-                                        display_mode: buttons
-                                        secondary_info: none
-                                        entity: input_number.mesi_manutenzione_lavatrice
-                                        layout: horizontal
-                                        primary_info: none
-                                        icon_type: none
-                                        style: |
-                                          ha-card {  
-                                            background: var(--ha-card-background);
-                                            border: 100px; 
-                                            border-radius: 0px;
-                                            }
-                            - type: custom:vertical-stack-in-card
-                              card_mod:
-                                style: |
-                                  ha-card {
-                                  --ha-card-border-width: 1px;
-                                  }
-                              cards:
-                                - type: custom:mushroom-entity-card
-                                  entity: input_boolean.detersivo_lavatrice
-                                  tap_action:
-                                    action: toggle
-                                  icon: mdi:bottle-tonic-outline
-                                  name: Detersivo
-                                  style: |
-                                    ha-card {  
-                                      background: var(--ha-card-background);
-                                      border: 100px; 
-                                      border-radius: 0px;
-                                      }
-                                - type: conditional
-                                  conditions:
-                                    - condition: state
-                                      entity: input_boolean.detersivo_lavatrice
-                                      state: 'on'
-                                  card:
-                                    type: horizontal-stack
-                                    cards:
-                                      - type: custom:mushroom-template-card
-                                        primary: Aggiungi
-                                        secondary: >-
-                                          Rimanenti:
-                                          {{states('counter.detersivo_lavatrice')|int(0)}} 
-                                        icon: ''
-                                        style: |
-                                          ha-card {  
-                                            background: var(--ha-card-background);
-                                            border: 100px; 
-                                            border-radius: 0px;
-                                            }
-                                        tap_action:
-                                          action: fire-dom-event
-                                          browser_mod:
-                                            service: browser_mod.more_info
-                                            data:
-                                              entity: >-
-                                                input_number.detersivo_acquistati_lavatrice
-                                              ignore_popup_card: true
-                                      - type: custom:mushroom-number-card
-                                        display_mode: buttons
-                                        secondary_info: none
-                                        entity: >-
-                                          input_number.detersivo_acquistati_lavatrice
-                                        layout: horizontal
-                                        primary_info: none
-                                        icon_type: none
-                                        style: |
-                                          ha-card {  
-                                            background: var(--ha-card-background);
-                                            border: 100px; 
-                                            border-radius: 0px;
-                                            }
-                                - type: conditional
-                                  conditions:
-                                    - condition: state
-                                      entity: input_boolean.detersivo_lavatrice
-                                      state: 'on'
-                                  card:
-                                    type: horizontal-stack
-                                    cards:
-                                      - type: custom:mushroom-template-card
-                                        primary: Soglia Residuo
-                                        secondary: >-
-                                          Al prossimo acquisto:
-                                          {{states('counter.detersivo_lavatrice')|int(0)
-                                          -
-                                          states('input_number.detersivo_residui_lavatrice')|int(0)}} 
-                                        icon: ''
-                                        style: |
-                                          ha-card {  
-                                            background: var(--ha-card-background);
-                                            border: 100px; 
-                                            border-radius: 0px;
-                                            }
-                                        tap_action:
-                                          action: fire-dom-event
-                                          browser_mod:
-                                            service: browser_mod.more_info
-                                            data:
-                                              entity: input_number.detersivo_residui_lavatrice
-                                              ignore_popup_card: true
-                                      - type: custom:mushroom-number-card
-                                        display_mode: buttons
-                                        secondary_info: none
-                                        entity: input_number.detersivo_residui_lavatrice
-                                        layout: horizontal
-                                        primary_info: none
-                                        icon_type: none
-                                        style: |
-                                          ha-card {  
-                                            background: var(--ha-card-background);
-                                            border: 100px; 
-                                            border-radius: 0px;
-                                            }
-                            - type: custom:vertical-stack-in-card
-                              card_mod:
-                                style: |
-                                  ha-card {
-                                  --ha-card-border-width: 1px;
-                                  }
-                              cards:
-                                - type: custom:mushroom-entity-card
-                                  entity: input_boolean.ammorbidente_lavatrice
-                                  tap_action:
-                                    action: toggle
-                                  icon: mdi:bottle-wine
-                                  name: Ammorbidente
-                                  style: |
-                                    ha-card {  
-                                      background: var(--ha-card-background);
-                                      border: 100px; 
-                                      border-radius: 0px;
-                                      }
-                                - type: conditional
-                                  conditions:
-                                    - condition: state
-                                      entity: input_boolean.ammorbidente_lavatrice
-                                      state: 'on'
-                                  card:
-                                    type: horizontal-stack
-                                    cards:
-                                      - type: custom:mushroom-template-card
-                                        primary: Aggiungi
-                                        secondary: >-
-                                          Attuali:
-                                          {{states('counter.ammorbidente_lavatrice')|int(0)}} 
-                                        icon: ''
-                                        style: |
-                                          ha-card {  
-                                            background: var(--ha-card-background);
-                                            border: 100px; 
-                                            border-radius: 0px;
-                                            }
-                                        tap_action:
-                                          action: fire-dom-event
-                                          browser_mod:
-                                            service: browser_mod.more_info
-                                            data:
-                                              entity: >-
-                                                input_number.ammorbidente_acquistati_lavatrice
-                                              ignore_popup_card: true
-                                      - type: custom:mushroom-number-card
-                                        display_mode: buttons
-                                        secondary_info: none
-                                        entity: >-
-                                          input_number.ammorbidente_acquistati_lavatrice
-                                        layout: horizontal
-                                        primary_info: none
-                                        icon_type: none
-                                        style: |
-                                          ha-card {  
-                                            background: var(--ha-card-background);
-                                            border: 100px; 
-                                            border-radius: 0px;
-                                            }
-                                - type: conditional
-                                  conditions:
-                                    - condition: state
-                                      entity: input_boolean.ammorbidente_lavatrice
-                                      state: 'on'
-                                  card:
-                                    type: horizontal-stack
-                                    cards:
-                                      - type: custom:mushroom-template-card
-                                        primary: Soglia Residuo
-                                        secondary: >
-                                          Al prossimo acquisto:
-                                          {{states('counter.ammorbidente_lavatrice')|int(0)
-                                          -
-                                          states('input_number.ammorbidente_residui_lavatrice')|int(0)}} 
-                                        icon: ''
-                                        style: |
-                                          ha-card {  
-                                            background: var(--ha-card-background);
-                                            border: 100px; 
-                                            border-radius: 0px;
-                                            }
-                                        tap_action:
-                                          action: fire-dom-event
-                                          browser_mod:
-                                            service: browser_mod.more_info
-                                            data:
-                                              entity: >-
-                                                input_number.ammorbidente_acquistati_lavatrice
-                                              ignore_popup_card: true
-                                      - type: custom:mushroom-number-card
-                                        display_mode: buttons
-                                        secondary_info: none
-                                        entity: >-
-                                          input_number.ammorbidente_residui_lavatrice
-                                        layout: horizontal
-                                        primary_info: none
-                                        icon_type: none
-                                        style: |
-                                          ha-card {  
-                                            background: var(--ha-card-background);
-                                            border: 100px; 
-                                            border-radius: 0px;
-                                            }
-                            - type: custom:vertical-stack-in-card
-                              card_mod:
-                                style: |
-                                  ha-card {
-                                  --ha-card-border-width: 1px;
-                                  }
-                              cards:
-                                - type: custom:mushroom-entity-card
-                                  entity: input_boolean.switch_lavatrice
-                                  name: Spegni switch dopo lavaggio
-                                  icon: mdi:power
-                                  tap_action:
-                                    action: toggle
-                                  style: |
-                                    ha-card {  
-                                      background: var(--ha-card-background);
-                                      border: 100px; 
-                                      border-radius: 0px;
-                                      }
-                                - type: custom:mushroom-template-card
-                                  primary: Reset contatori statistiche
-                                  secondary: >
-                                    Eseguito {{
+                                    | Giorno      |
+                                    Costo                            |
+                                    Consumo                            |
+                                    Tempo                            |
+                                    Cicli                            |
+
+                                    | :---------- |
+                                    :------------------------------: |
+                                    :--------------------------------: |
+                                    :------------------------------: |
+                                    :------------------------------: |
+
+                                    | <b>Lunedi   | {{ settimanale.Lunedi.costo
+                                    }}    | {{ settimanale.Lunedi.consumo }}   |
+                                    {{ settimanale.Lunedi.tempo }}   | {{
+                                    settimanale.Lunedi.cicli }}   |
+
+                                    | <b>Martedi  | {{ settimanale.Martedi.costo
+                                    }}  | {{ settimanale.Martedi.consumo }}  |
+                                    {{ settimanale.Martedi.tempo }}  | {{
+                                    settimanale.Martedi.cicli }}  |
+
+                                    | <b>Mercoledi| {{
+                                    settimanale.Mercoledi.costo }}| {{
+                                    settimanale.Mercoledi.consumo }}| {{
+                                    settimanale.Mercoledi.tempo }}| {{
+                                    settimanale.Mercoledi.cicli }}|
+
+                                    | <b>Giovedi  | {{ settimanale.Giovedi.costo
+                                    }}  | {{ settimanale.Giovedi.consumo }}  |
+                                    {{ settimanale.Giovedi.tempo }}  | {{
+                                    settimanale.Giovedi.cicli }}  |
+
+                                    | <b>Venerdi  | {{ settimanale.Venerdi.costo
+                                    }}  | {{ settimanale.Venerdi.consumo }}  |
+                                    {{ settimanale.Venerdi.tempo }}  | {{
+                                    settimanale.Venerdi.cicli }}  |
+
+                                    | <b>Sabato   | {{ settimanale.Sabato.costo
+                                    }}   | {{ settimanale.Sabato.consumo }}   |
+                                    {{ settimanale.Sabato.tempo }}   | {{
+                                    settimanale.Sabato.cicli }}   |
+
+                                    | <b>Domenica | {{
+                                    settimanale.Domenica.costo }} | {{
+                                    settimanale.Domenica.consumo }} | {{
+                                    settimanale.Domenica.tempo }} | {{
+                                    settimanale.Domenica.cicli }} |
+
+                                    ---
+
+                                    Mensile
+
+                                    -
+
+                                    {% set mensile =
+                                    state_attr('sensor.storico_lavatrice','Mensile')
+                                    %}
+
+                                    | Mese        | Costo                       
+                                    | Consumo                        |
+                                    Tempo                        |
+                                    Cicli                        |
+
+                                    | :---------- | :--------------------------:
+                                    | :----------------------------: |
+                                    :--------------------------: |
+                                    :--------------------------: |
+
+                                    | <b>Gennaio  | {{ mensile.Gennaio.costo }} 
+                                    | {{ mensile.Gennaio.consumo }}  | {{
+                                    mensile.Gennaio.tempo }}  | {{
+                                    mensile.Gennaio.cicli }}  |
+
+                                    | <b>Febbraio | {{ mensile.Febbraio.costo }}
+                                    | {{ mensile.Febbraio.consumo }} | {{
+                                    mensile.Febbraio.tempo }} | {{
+                                    mensile.Febbraio.cicli }} |
+
+                                    | <b>Marzo    | {{ mensile.Marzo.costo }}   
+                                    | {{ mensile.Marzo.consumo }}    | {{
+                                    mensile.Marzo.tempo }}    | {{
+                                    mensile.Marzo.cicli }}    |
+
+                                    | <b>Aprile   | {{ mensile.Aprile.costo }}  
+                                    | {{ mensile.Aprile.consumo }}   | {{
+                                    mensile.Aprile.tempo }}   | {{
+                                    mensile.Aprile.cicli }}   |
+
+                                    | <b>Maggio   | {{ mensile.Maggio.costo }}  
+                                    | {{ mensile.Maggio.consumo }}   | {{
+                                    mensile.Maggio.tempo }}   | {{
+                                    mensile.Maggio.cicli }}   |
+
+                                    | <b>Giugno   | {{ mensile.Giugno.costo }}  
+                                    | {{ mensile.Giugno.consumo }}   | {{
+                                    mensile.Giugno.tempo }}   | {{
+                                    mensile.Giugno.cicli }}   |
+
+                                    | <b>Luglio   | {{ mensile.Luglio.costo }}  
+                                    | {{ mensile.Luglio.consumo }}   | {{
+                                    mensile.Luglio.tempo }}   | {{
+                                    mensile.Luglio.cicli }}   |
+
+                                    | <b>Agosto   | {{ mensile.Agosto.costo }}  
+                                    | {{ mensile.Agosto.consumo }}   | {{
+                                    mensile.Agosto.tempo }}   | {{
+                                    mensile.Agosto.cicli }}   |
+
+                                    | <b>Settembre| {{ mensile.Settembre.costo
+                                    }}| {{ mensile.Settembre.consumo }}| {{
+                                    mensile.Settembre.tempo }}| {{
+                                    mensile.Settembre.cicli }}|
+
+                                    | <b>Ottobre  | {{ mensile.Ottobre.costo }} 
+                                    | {{ mensile.Ottobre.consumo }}  | {{
+                                    mensile.Ottobre.tempo }}  | {{
+                                    mensile.Ottobre.cicli }}  |
+
+                                    | <b>Novembre | {{ mensile.Novembre.costo }}
+                                    | {{ mensile.Novembre.consumo }} | {{
+                                    mensile.Novembre.tempo }} | {{
+                                    mensile.Novembre.cicli }} |
+
+                                    | <b>Dicembre | {{ mensile.Dicembre.costo }}
+                                    | {{ mensile.Dicembre.consumo }} | {{
+                                    mensile.Dicembre.tempo }} | {{
+                                    mensile.Dicembre.cicli }} |
+
+
+                                    Ultimo reset statistiche il {{
                                     as_local(state_attr('script.reset_sensori_lavatrice',
                                     'last_triggered')).strftime('%d/%m/%Y
                                     %H:%M') }}
-                                  icon: mdi:chart-line
-                                  style: |
-                                    ha-card {  
-                                      background: var(--ha-card-background);
-                                      border: 100px; 
-                                      border-radius: 0px;
-                                      }
-                                  entity: script.reset_sensori_lavatrice
-                                  tap_action:
-                                    confirmation:
-                                      text: Eseguo il reset statistiche
-                                    action: toggle
-            - type: custom:mushroom-chips-card
-              alignment: end
-              chips:
-                - type: conditional
-                  conditions:
-                    - entity: input_boolean.check_ritirare_panni
-                      state: 'on'
-                  chip:
-                    type: template
-                    icon: mdi:washing-machine-alert
-                    entity: input_boolean.check_ritirare_panni
-                    content: PANNI DA RITIRARE
-                    icon_color: blue
-                    card_mod:
-                      style: |
-                        ha-card {
-                          --chip-box-shadow: none;
-                          --chip-background: var(--secondary-background-color);
-                          --chip-border-width: 1px;
-                        }
+                                  card_mod:
+                                    style:
+                                      ha-markdown $: |
+                                        table {
+                                          width: 100%;
+                                          border-spacing: 0;
+                                        }
+                        - type: template
+                          icon: mdi:information-outline
+                          card_mod:
+                            style: |
+                              ha-card {
+                                --chip-box-shadow: none;
+                                --chip-background: var(--secondary-background-color);
+                                --chip-border-width: 1px;
+                              }
+                          tap_action:
+                            action: fire-dom-event
+                            browser_mod:
+                              service: browser_mod.popup
+                              data:
+                                dismissable: false
+                                timeout: 30000
+                                right_button: Indietro
+                                content:
+                                  type: markdown
+                                  content: >+
 
+                                    {% from 'history_stats_custom.jinja' import
+                                    last_use, history %} #### Manutenzione
 
-                                    
+                                    |   |  |
+
+                                    |:--              |
+                                    ---:                                              
+                                    |
+
+                                    |Avviso |  {{
+                                    iif(is_state('input_boolean.manutenzioni_lavatrice',
+                                    'on'), 'Attivo', 'Non Attivo') }} 
+
+                                    |Lavaggi residui: |
+                                    {{states('counter.manutenzioni_lavatrice')|int(0)}}      
+                                    |
+
+                                    |Scadenza:       
+                                    |{{states('input_datetime.manutenzione_lavatrice')}}
+                                    |
+
+                                    ---
+
+                                    #### Detersivo
+
+                                    |    |     |
+
+                                    |:-- | --: |
+
+                                    |Avviso           | {{
+                                    iif(is_state('input_boolean.detersivo_lavatrice',
+                                    'on'), 'Attivo', 'Non Attivo') }} 
+
+                                    |N. Detersivo per avviso  | {{
+                                    states('input_number.detersivo_residui_lavatrice')
+                                    | int(0) }}
+
+                                    |Detersivo residui:    |
+                                    {{states('counter.detersivo_lavatrice')|int(0)}} 
+
+                                    ---
+
+                                    #### Ammorbidente
+
+                                    |    |     |
+
+                                    |:-- | --: |
+
+                                    |Avviso           | {{
+                                    iif(is_state('input_boolean.ammorbidente_lavatrice',
+                                    'on'), 'Attivo', 'Non Attivo') }} 
+
+                                    |N. Ammorbidente per avviso  | {{
+                                    states('input_number.ammorbidente_residui_lavatrice')
+                                    | int(0) }}
+
+                                    |Ammorbidente residui:    |
+                                    {{states('counter.ammorbidente_lavatrice')|int(0)}} 
+
+                                  card_mod:
+                                    style:
+                                      ha-markdown $: |
+                                        table {
+                                          width: 100%;
+                                          border-spacing: 0;
+                                        }
+                        - type: template
+                          icon: hass:cog-outline
+                          card_mod:
+                            style: |
+                              ha-card {
+                                --chip-box-shadow: none;
+                                --chip-background: var(--secondary-background-color);
+                                --chip-border-width: 1px;
+                              }
+                          tap_action:
+                            action: fire-dom-event
+                            browser_mod:
+                              service: browser_mod.popup
+                              data:
+                                dismissable: false
+                                timeout: 30000
+                                right_button: Indietro
+                                content:
+                                  type: vertical-stack
+                                  cards:
+                                    - type: custom:vertical-stack-in-card
+                                      card_mod:
+                                        style: |
+                                          ha-card {
+                                          --ha-card-border-width: 1px;
+                                          }
+                                      cards:
+                                        - type: horizontal-stack
+                                          cards:
+                                            - type: custom:mushroom-template-card
+                                              primary: Assorbimento
+                                              entity: input_number.soglia_lavoro_lavatrice_w
+                                              secondary: 'Attuali: {{states(entity)|int(0)}} W'
+                                              icon: mdi:power-plug
+                                              tap_action:
+                                                action: fire-dom-event
+                                                browser_mod:
+                                                  service: browser_mod.more_info
+                                                  data:
+                                                    entity: input_number.soglia_lavoro_lavatrice_w
+                                                    ignore_popup_card: true
+                                              style: |
+                                                ha-card {  
+                                                  background: var(--ha-card-background);
+                                                  border: 100px; 
+                                                  border-radius: 0px;
+                                                  }
+                                            - type: custom:mushroom-number-card
+                                              display_mode: buttons
+                                              secondary_info: none
+                                              entity: input_number.soglia_lavoro_lavatrice_w
+                                              layout: horizontal
+                                              primary_info: none
+                                              icon_type: none
+                                              style: |
+                                                ha-card {  
+                                                  background: var(--ha-card-background);
+                                                  border: 100px; 
+                                                  border-radius: 0px;
+                                                  }
+                                        - type: horizontal-stack
+                                          cards:
+                                            - type: custom:mushroom-template-card
+                                              primary: Ritardo
+                                              secondary: 'Impostato: {{states(entity)|int(0)}} m'
+                                              icon: mdi:timer
+                                              style: |
+                                                ha-card {  
+                                                  background: var(--ha-card-background);
+                                                  border: 100px; 
+                                                  border-radius: 0px;
+                                                  }
+                                              tap_action:
+                                                action: fire-dom-event
+                                                browser_mod:
+                                                  service: browser_mod.more_info
+                                                  data:
+                                                    entity: input_number.tempo_innesco_lavatrice_m
+                                                    ignore_popup_card: true
+                                              entity: input_number.tempo_innesco_lavatrice_m
+                                            - type: custom:mushroom-number-card
+                                              display_mode: buttons
+                                              secondary_info: none
+                                              entity: input_number.tempo_innesco_lavatrice_m
+                                              layout: horizontal
+                                              primary_info: none
+                                              icon_type: none
+                                              style: |
+                                                ha-card {  
+                                                  background: var(--ha-card-background);
+                                                  border: 100px; 
+                                                  border-radius: 0px;
+                                                  }
+                                    - type: custom:vertical-stack-in-card
+                                      card_mod:
+                                        style: |
+                                          ha-card {
+                                          --ha-card-border-width: 1px;
+                                          }
+                                      cards:
+                                        - type: custom:mushroom-entity-card
+                                          entity: input_boolean.notify_lavatrice
+                                          icon: mdi:message
+                                          name: Notifiche
+                                          tap_action:
+                                            action: toggle
+                                          style: |
+                                            ha-card {  
+                                              background: var(--ha-card-background);
+                                              border: 100px; 
+                                              border-radius: 0px;
+                                              }
+                                        - type: conditional
+                                          conditions:
+                                            - condition: state
+                                              entity: input_boolean.notify_lavatrice
+                                              state: 'on'
+                                          card:
+                                            type: custom:mushroom-entity-card
+                                            entity: input_boolean.controllo_panni
+                                            icon: mdi:tshirt-v
+                                            name: Stato indumenti
+                                            tap_action:
+                                              action: toggle
+                                            style: |
+                                              ha-card {  
+                                                background: var(--ha-card-background);
+                                                border: 100px; 
+                                                border-radius: 0px;
+                                                }
+                                        - type: conditional
+                                          conditions:
+                                            - condition: state
+                                              entity: input_boolean.notify_lavatrice
+                                              state: 'on'
+                                            - condition: state
+                                              entity: input_boolean.controllo_panni
+                                              state: 'on'
+                                          card:
+                                            type: custom:mushroom-entity-card
+                                            entity: >-
+                                              automation.elettrodomestici_conferma_alexa_lavatrice
+                                            name: Conferma indumenti con Alexa
+                                            icon: mdi:speaker
+                                            tap_action:
+                                              action: toggle
+                                            style: |
+                                              ha-card {  
+                                                background: var(--ha-card-background);
+                                                border: 100px; 
+                                                border-radius: 0px;
+                                                }
+                                    - type: custom:vertical-stack-in-card
+                                      card_mod:
+                                        style: |
+                                          ha-card {
+                                          --ha-card-border-width: 1px;
+                                          }
+                                      cards:
+                                        - type: custom:mushroom-entity-card
+                                          entity: input_boolean.manutenzioni_lavatrice
+                                          tap_action:
+                                            action: toggle
+                                          name: 'Manutenzione '
+                                          icon: mdi:toolbox
+                                          style: |
+                                            ha-card {  
+                                              background: var(--ha-card-background);
+                                              border: 100px; 
+                                              border-radius: 0px;
+                                              }
+                                        - type: conditional
+                                          conditions:
+                                            - condition: state
+                                              entity: input_boolean.manutenzioni_lavatrice
+                                              state: 'on'
+                                          card:
+                                            type: horizontal-stack
+                                            cards:
+                                              - type: custom:mushroom-template-card
+                                                primary: Imposta lavaggi
+                                                secondary: >
+                                                  Lavaggi rimanenti:
+                                                  {{states('counter.manutenzioni_lavatrice')|int(0)}}
+                                                icon: ''
+                                                style: |
+                                                  ha-card {  
+                                                    background: var(--ha-card-background);
+                                                    border: 100px; 
+                                                    border-radius: 0px;
+                                                    }
+                                                tap_action:
+                                                  action: fire-dom-event
+                                                  browser_mod:
+                                                    service: browser_mod.more_info
+                                                    data:
+                                                      entity: >-
+                                                        input_number.lavaggi_manutenzione_lavatrice
+                                                      ignore_popup_card: true
+                                              - type: custom:mushroom-number-card
+                                                display_mode: buttons
+                                                secondary_info: none
+                                                entity: >-
+                                                  input_number.lavaggi_manutenzione_lavatrice
+                                                layout: horizontal
+                                                primary_info: none
+                                                icon_type: none
+                                                style: |
+                                                  ha-card {  
+                                                    background: var(--ha-card-background);
+                                                    border: 100px; 
+                                                    border-radius: 0px;
+                                                    }
+                                        - type: conditional
+                                          conditions:
+                                            - condition: state
+                                              entity: input_boolean.manutenzioni_lavatrice
+                                              state: 'on'
+                                          card:
+                                            type: horizontal-stack
+                                            cards:
+                                              - type: custom:mushroom-template-card
+                                                primary: Imposta mesi
+                                                secondary: >
+                                                  Scadenza:
+                                                  {{states('input_datetime.manutenzione_lavatrice')}}
+                                                icon: ''
+                                                style: |
+                                                  ha-card {  
+                                                    background: var(--ha-card-background);
+                                                    border: 100px; 
+                                                    border-radius: 0px;
+                                                    }
+                                                tap_action:
+                                                  action: fire-dom-event
+                                                  browser_mod:
+                                                    service: browser_mod.more_info
+                                                    data:
+                                                      entity: input_number.mesi_manutenzione_lavatrice
+                                                      ignore_popup_card: true
+                                              - type: custom:mushroom-number-card
+                                                display_mode: buttons
+                                                secondary_info: none
+                                                entity: input_number.mesi_manutenzione_lavatrice
+                                                layout: horizontal
+                                                primary_info: none
+                                                icon_type: none
+                                                style: |
+                                                  ha-card {  
+                                                    background: var(--ha-card-background);
+                                                    border: 100px; 
+                                                    border-radius: 0px;
+                                                    }
+                                    - type: custom:vertical-stack-in-card
+                                      card_mod:
+                                        style: |
+                                          ha-card {
+                                          --ha-card-border-width: 1px;
+                                          }
+                                      cards:
+                                        - type: custom:mushroom-entity-card
+                                          entity: input_boolean.detersivo_lavatrice
+                                          tap_action:
+                                            action: toggle
+                                          icon: mdi:bottle-tonic-outline
+                                          name: Detersivo
+                                          style: |
+                                            ha-card {  
+                                              background: var(--ha-card-background);
+                                              border: 100px; 
+                                              border-radius: 0px;
+                                              }
+                                        - type: conditional
+                                          conditions:
+                                            - condition: state
+                                              entity: input_boolean.detersivo_lavatrice
+                                              state: 'on'
+                                          card:
+                                            type: horizontal-stack
+                                            cards:
+                                              - type: custom:mushroom-template-card
+                                                primary: Aggiungi
+                                                secondary: >-
+                                                  Rimanenti:
+                                                  {{states('counter.detersivo_lavatrice')|int(0)}} 
+                                                icon: ''
+                                                style: |
+                                                  ha-card {  
+                                                    background: var(--ha-card-background);
+                                                    border: 100px; 
+                                                    border-radius: 0px;
+                                                    }
+                                                tap_action:
+                                                  action: fire-dom-event
+                                                  browser_mod:
+                                                    service: browser_mod.more_info
+                                                    data:
+                                                      entity: >-
+                                                        input_number.detersivo_acquistati_lavatrice
+                                                      ignore_popup_card: true
+                                              - type: custom:mushroom-number-card
+                                                display_mode: buttons
+                                                secondary_info: none
+                                                entity: >-
+                                                  input_number.detersivo_acquistati_lavatrice
+                                                layout: horizontal
+                                                primary_info: none
+                                                icon_type: none
+                                                style: |
+                                                  ha-card {  
+                                                    background: var(--ha-card-background);
+                                                    border: 100px; 
+                                                    border-radius: 0px;
+                                                    }
+                                        - type: conditional
+                                          conditions:
+                                            - condition: state
+                                              entity: input_boolean.detersivo_lavatrice
+                                              state: 'on'
+                                          card:
+                                            type: horizontal-stack
+                                            cards:
+                                              - type: custom:mushroom-template-card
+                                                primary: Soglia Residuo
+                                                secondary: >-
+                                                  Al prossimo acquisto:
+                                                  {{states('counter.detersivo_lavatrice')|int(0)
+                                                  -
+                                                  states('input_number.detersivo_residui_lavatrice')|int(0)}} 
+                                                icon: ''
+                                                style: |
+                                                  ha-card {  
+                                                    background: var(--ha-card-background);
+                                                    border: 100px; 
+                                                    border-radius: 0px;
+                                                    }
+                                                tap_action:
+                                                  action: fire-dom-event
+                                                  browser_mod:
+                                                    service: browser_mod.more_info
+                                                    data:
+                                                      entity: input_number.detersivo_residui_lavatrice
+                                                      ignore_popup_card: true
+                                              - type: custom:mushroom-number-card
+                                                display_mode: buttons
+                                                secondary_info: none
+                                                entity: input_number.detersivo_residui_lavatrice
+                                                layout: horizontal
+                                                primary_info: none
+                                                icon_type: none
+                                                style: |
+                                                  ha-card {  
+                                                    background: var(--ha-card-background);
+                                                    border: 100px; 
+                                                    border-radius: 0px;
+                                                    }
+                                    - type: custom:vertical-stack-in-card
+                                      card_mod:
+                                        style: |
+                                          ha-card {
+                                          --ha-card-border-width: 1px;
+                                          }
+                                      cards:
+                                        - type: custom:mushroom-entity-card
+                                          entity: input_boolean.ammorbidente_lavatrice
+                                          tap_action:
+                                            action: toggle
+                                          icon: mdi:bottle-wine
+                                          name: Ammorbidente
+                                          style: |
+                                            ha-card {  
+                                              background: var(--ha-card-background);
+                                              border: 100px; 
+                                              border-radius: 0px;
+                                              }
+                                        - type: conditional
+                                          conditions:
+                                            - condition: state
+                                              entity: input_boolean.ammorbidente_lavatrice
+                                              state: 'on'
+                                          card:
+                                            type: horizontal-stack
+                                            cards:
+                                              - type: custom:mushroom-template-card
+                                                primary: Aggiungi
+                                                secondary: >-
+                                                  Attuali:
+                                                  {{states('counter.ammorbidente_lavatrice')|int(0)}} 
+                                                icon: ''
+                                                style: |
+                                                  ha-card {  
+                                                    background: var(--ha-card-background);
+                                                    border: 100px; 
+                                                    border-radius: 0px;
+                                                    }
+                                                tap_action:
+                                                  action: fire-dom-event
+                                                  browser_mod:
+                                                    service: browser_mod.more_info
+                                                    data:
+                                                      entity: >-
+                                                        input_number.ammorbidente_acquistati_lavatrice
+                                                      ignore_popup_card: true
+                                              - type: custom:mushroom-number-card
+                                                display_mode: buttons
+                                                secondary_info: none
+                                                entity: >-
+                                                  input_number.ammorbidente_acquistati_lavatrice
+                                                layout: horizontal
+                                                primary_info: none
+                                                icon_type: none
+                                                style: |
+                                                  ha-card {  
+                                                    background: var(--ha-card-background);
+                                                    border: 100px; 
+                                                    border-radius: 0px;
+                                                    }
+                                        - type: conditional
+                                          conditions:
+                                            - condition: state
+                                              entity: input_boolean.ammorbidente_lavatrice
+                                              state: 'on'
+                                          card:
+                                            type: horizontal-stack
+                                            cards:
+                                              - type: custom:mushroom-template-card
+                                                primary: Soglia Residuo
+                                                secondary: >
+                                                  Al prossimo acquisto:
+                                                  {{states('counter.ammorbidente_lavatrice')|int(0)
+                                                  -
+                                                  states('input_number.ammorbidente_residui_lavatrice')|int(0)}} 
+                                                icon: ''
+                                                style: |
+                                                  ha-card {  
+                                                    background: var(--ha-card-background);
+                                                    border: 100px; 
+                                                    border-radius: 0px;
+                                                    }
+                                                tap_action:
+                                                  action: fire-dom-event
+                                                  browser_mod:
+                                                    service: browser_mod.more_info
+                                                    data:
+                                                      entity: >-
+                                                        input_number.ammorbidente_acquistati_lavatrice
+                                                      ignore_popup_card: true
+                                              - type: custom:mushroom-number-card
+                                                display_mode: buttons
+                                                secondary_info: none
+                                                entity: >-
+                                                  input_number.ammorbidente_residui_lavatrice
+                                                layout: horizontal
+                                                primary_info: none
+                                                icon_type: none
+                                                style: |
+                                                  ha-card {  
+                                                    background: var(--ha-card-background);
+                                                    border: 100px; 
+                                                    border-radius: 0px;
+                                                    }
+                                    - type: custom:vertical-stack-in-card
+                                      card_mod:
+                                        style: |
+                                          ha-card {
+                                          --ha-card-border-width: 1px;
+                                          }
+                                      cards:
+                                        - type: custom:mushroom-entity-card
+                                          entity: input_boolean.switch_lavatrice
+                                          name: Spegni switch dopo lavaggio
+                                          icon: mdi:power
+                                          tap_action:
+                                            action: toggle
+                                          style: |
+                                            ha-card {  
+                                              background: var(--ha-card-background);
+                                              border: 100px; 
+                                              border-radius: 0px;
+                                              }
+                                        - type: custom:mushroom-template-card
+                                          primary: Reset contatori statistiche
+                                          secondary: >
+                                            Eseguito {{
+                                            as_local(state_attr('script.reset_sensori_lavatrice',
+                                            'last_triggered')).strftime('%d/%m/%Y
+                                            %H:%M') }}
+                                          icon: mdi:chart-line
+                                          style: |
+                                            ha-card {  
+                                              background: var(--ha-card-background);
+                                              border: 100px; 
+                                              border-radius: 0px;
+                                              }
+                                          entity: script.reset_sensori_lavatrice
+                                          tap_action:
+                                            confirmation:
+                                              text: Eseguo il reset statistiche
+                                            action: toggle
+                - type: custom:mushroom-chips-card
+                  chips:
+                    - type: conditional
+                      conditions:
+                        - entity: input_boolean.check_ritirare_panni
+                          state: 'on'
+                      chip:
+                        type: template
+                        icon: mdi:washing-machine-alert
+                        entity: input_boolean.check_ritirare_panni
+                        content: PANNI DA RITIRARE
+                        icon_color: blue
+                        card_mod:
+                          style: |
+                            ha-card {
+                              --chip-box-shadow: none;
+                              --chip-background: var(--secondary-background-color);
+                              --chip-border-width: 1px;
+                            }
+                - type: custom:apexcharts-card
+                  card_mod:
+                    style: |
+                      ha-card {  
+                        background: non;
+                        border: 100px; 
+                        border-radius: 0px;
+                        }                
+                  graph_span: 4d
+                  span:
+                    end: day
+                    offset: '-1sec'
+                  apex_config:
+                    chart:
+                      type: area
+                      height: 150
+                    stroke:
+                      show: true
+                      width: 1
+                      curve: smooth
+                    legend:
+                      show: false
+                    xaxis:
+                      labels:
+                        format: dd-MM
+                    fill:
+                      type: gradient
+                      gradient:
+                        shadeIntensity: 0.1
+                        opacityFrom: 0.25
+                        opacityTo: 1
+                        inverseColors: true
+                  series:
+                    - color: var(--input-fill-color)
+                      entity: sensor.cycles_day_lavatrice
+                      name: Lavaggi
+                      type: column
+                      group_by:
+                        func: max
+                        duration: 24h
+                    - color: var(--state-icon-active-color)
+                      entity: sensor.energy_day_lavatrice
+                      type: column
+                      name: Consumo
+                      group_by:
+                        func: max
+                        duration: 24h
+                    - color: var(--state-icon-color)
+                      entity: sensor.time_day_lavatrice
+                      name: Tempo
+                      type: column
+                      group_by:
+                        func: max
+                        duration: 24h
+            - type: custom:mushroom-title-card
+              title: LAVATRICE
+              subtitle: >-
+                {% from 'history_stats_custom.jinja' import last_use %} {% set
+                fine =  state_attr('sensor.lavaggio_terminato','time') |
+                timestamp_custom('%H:%M') %} {% if
+                is_state('input_boolean.check_ritirare_panni', 'on') %}  {{
+                'Panni da ritirare dalle ' + fine }} {%elif
+                is_state('binary_sensor.lavatrice', 'on') %}
+                  Lavatrice attiva da {{last_use('sensor.lavaggio_iniziato','sensor.lavaggio_terminato','binary_sensor.lavatrice')|
+                trim}} {%else%}
+                  {{ 'Lavaggio terminato alle ' + fine + ' in ' + last_use('sensor.lavaggio_iniziato','sensor.lavaggio_terminato','binary_sensor.lavatrice')|
+                trim}} {% endif %}
+              alignment: center
+              title_tap_action:
+                action: none
+              subtitle_tap_action:
+                action: none
+              card_mod:
+                style:
+                  .: |
+                    ha-card {
+                      margin-top: -11%;
+                    }
   statis:
     card:
-      type: custom:mushroom-template-card
-      card_mod:
-        style:
-          mushroom-state-info$: |
-            .primary {
-              text-align: left !important;
-            }
-            .secondary {
-              text-align: left !important;
-            }
-          .: |
-            ha-card {
-              background: none;
-              border: 100px; 
-              border-radius: 0px;
-            }
-      secondary: >-
-        OGGI {% from 'history_stats_custom.jinja' import last_use, history %}
+      type: horizontal-stack
+      cards:
+        - type: custom:mushroom-template-card
+          card_mod:
+            style:
+              mushroom-state-info$: |
+                .secondary {
+                  text-align: left !important;
+                }
+              .: |
+                ha-card {
+                  background: none;
+                  border: 100px; 
+                  border-radius: 0px;
+                  width: 200%;
+                }
+          secondary: >-
+            {% from 'history_stats_custom.jinja' import last_use, history %}
+            OGGI:  {{states('sensor.cycles_day_lavatrice')}}
 
-        Lavaggi: {{states('sensor.cycles_day_lavatrice')}}
+            {{ states('sensor.energy_day_lavatrice') | float(0) | round(2) }}
+            KWh
 
-        {{ (states('sensor.energy_day_lavatrice') | float(0) *
-        states('input_number.costo_energia_casa') | float(0)) | round(2,
-        default=0) }} €
-
-        {{ states('sensor.energy_day_lavatrice') | float(0) | round(2) }} KWh
-
-        {{ history(states('sensor.time_day_lavatrice')) | trim}}
+            {{ history(states('sensor.time_day_lavatrice')) | trim}}
 
 
-        MESE
+            MESE: {{states('sensor.cycles_month_lavatrice')}}
 
-        Lavaggi {{states('sensor.cycles_month_lavatrice')}}
+            {{ states('sensor.energy_month_lavatrice') | float(0) | round(2) }}
+            KWh
 
-        {{ (states('sensor.energy_month_lavatrice') | float(0) *
-        states('input_number.costo_energia_casa') | float(0)) | round(2,
-        default=0) }} €
+            {{ history(states('sensor.time_month_lavatrice')) | trim}}
+          multiline_secondary: true
+        - type: custom:mushroom-template-card
+          card_mod:
+            style:
+              mushroom-state-info$: |
+                .primary {
+                  text-align: left !important;
+                }
+                .secondary {
+                  text-align: left !important;
+                }
+              .: |
+                ha-card {
+                  background: none;
+                  border: 100px; 
+                  border-radius: 0px;
+                  width: 200%;
+                }
+          secondary: >-
+            {% from 'history_stats_custom.jinja' import last_use, history %}
+            ANNO: {{states('sensor.cycles_year_lavatrice')}}
 
-        {{ states('sensor.energy_month_lavatrice') | float(0) | round(2) }} KWh
+            {{ states('sensor.energy_year_lavatrice') | float(0) | round(2) }}
+            KWh
 
-        {{ history(states('sensor.time_month_lavatrice')) | trim}}
-
-
-        ANNO
-
-        Lavaggi {{states('sensor.cycles_year_lavatrice')}}
-
-        {{ (states('sensor.energy_year_lavatrice') | float(0) *
-        states('input_number.costo_energia_casa') | float(0)) | round(2,
-        default=0) }} €
-
-        {{ states('sensor.energy_year_lavatrice') | float(0) | round(2) }} KWh
-
-        {{ history(states('sensor.time_year_lavatrice')) | trim}}
+            {{ history(states('sensor.time_year_lavatrice')) | trim}}
 
 
-        DISPENSA 
+            DISPENSA 
 
-        Detersivo: {{states('counter.detersivo_lavatrice')|int(0)}} 
+            Detersivo: {{states('counter.detersivo_lavatrice')|int(0)}} 
 
-        Ammorbidiente: {{states('counter.ammorbidente_lavatrice')|int(0)}}
-      multiline_secondary: true
+            Ammorbidiente:  {{states('counter.ammorbidente_lavatrice')|int(0)}}
+          multiline_secondary: true
   icon: |
     [[[
       const sensorState = states['binary_sensor.lavatrice'].state;
