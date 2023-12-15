@@ -4,13 +4,6 @@ homeassistant:
       switch: &switch switch.lavatrice1pm
       power: &power sensor.lavatrice1pm_power
 
-# recorder:
-#   include:
-#     entities:
-#       - sensor.energy_day_lavatrice
-#       - sensor.time_day_lavatrice
-#       - sensor.cycles_day_lavatrice
-
 sensor:
   - platform: integration
     source: *power
@@ -302,6 +295,11 @@ template:
         state: "{{ 1 if this.state | int(0) == 0 else this.state | int(0) + 1 }}"
         attributes:
           time: "{{ as_timestamp(now()) }}"
+  - trigger:
+      - platform: state
+        entity_id: binary_sensor.lavatrice
+        from: "on"
+        to: "off"
     action:
       - variables:
           person_home: >-
