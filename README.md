@@ -11,7 +11,9 @@ Grazie di cuore per il tuo sostegno!
 
 # Smart Laundry System - Lavatrice
 
-![-](example/Registrazione.mp4)
+
+https://github.com/Home-Assistant-Pro-Team/Smart-Laundry-System---Lavatrice/assets/62516592/d6b174b3-f2ec-4e73-b012-b86a043c506e
+
 ## **Indice**
 
 - [Introduzione](#introduzione)
