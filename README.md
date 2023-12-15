@@ -11,7 +11,7 @@ Grazie di cuore per il tuo sostegno!
 
 # Smart Laundry System - Lavatrice
 
-![-](example/Screenshot1.png)
+![-](example/Registrazione.mp4)
 ## **Indice**
 
 - [Introduzione](#introduzione)
@@ -171,7 +171,7 @@ Ora dovresti visualizzare la card con tutte le informazioni sulla lavatrice sull
 
 La nostra card è stata progettata per adattarsi senza sforzi a dispositivi mobili e desktop, fornendo un modo rapido e accessibile per tenere traccia dello stato della lavatrice. Con un'animazione SVG personalizzata, otterrai una visione immediata delle attività in corso, rendendo il monitoraggio della lavatrice un'esperienza intuitiva.
 
-![-](example/Screenshot1.png)
+![-](example/Screenshot.png)
 
 La card offre una panoramica dettagliata delle attività della lavatrice con un grafico intuitivo che riepiloga gli ultimi 4 giorni, fornendo informazioni sul tempo di funzionamento, consumo energetico e numero di lavaggi. Ulteriori dettagli statistici sono disponibili per il giorno corrente, il mese e l'anno, offrendo una visione approfondita delle abitudini di utilizzo. Inoltre, per consentire un accesso rapido e diretto a ulteriori informazioni, la card è dotata di tre tasti dedicati.
 
