@@ -92,53 +92,53 @@ La struttura del pacchetto è organizzata in diverse cartelle.
 
 Nel caso non sia già presente, la prima operazione da compiere è il caricamento della cartella "custom_templates" nella directory "config", o, in alternativa, l'inserimento dei singoli file al suo interno.
 
-    - **personal.jinja**
-        Questo file è utilizzato per altri progetti all'interno di questo repository GitHub. Nel file, impostiamo dati personali che verranno utilizzati in tutti i progetti. È sufficiente inserire le proprie entità rispettando l'indentazione JSON.
+  - **personal.jinja**
+      Questo file è utilizzato per altri progetti all'interno di questo repository GitHub. Nel file, impostiamo dati personali che verranno utilizzati in tutti i progetti. È sufficiente inserire le proprie entità rispettando l'indentazione JSON.
 
-        Vediamo come personalizzarlo. Anche se non tutte le informazioni sono necessarie per questo pacchetto, è consigliabile compilare tutti i campi per poter sfruttarlo appieno in altri progetti.
+      Vediamo come personalizzarlo. Anche se non tutte le informazioni sono necessarie per questo pacchetto, è consigliabile compilare tutti i campi per poter sfruttarlo appieno in altri progetti.
 
-        In questa sezione, definiamo le entità e i sensori per ogni persona. Se non si desidera associare un numero di cellulare o un sensore di sveglia a una persona specifica, è sufficiente assegnare il valore "none" nella sezione corrispondente del file. Per aggiungere o rimuovere persone dalla lista di dizionari, è necessario prestare attenzione alla sintassi JSON.
+      In questa sezione, definiamo le entità e i sensori per ogni persona. Se non si desidera associare un numero di cellulare o un sensore di sveglia a una persona specifica, è sufficiente assegnare il valore "none" nella sezione corrispondente del file. Per aggiungere o rimuovere persone dalla lista di dizionari, è necessario prestare attenzione alla sintassi JSON.
 
-        ```
-        {% macro persons() %}
-        [
-            {
-                "person": "person.marco",
-                "battery": "sensor.cellulare_marco_battery_level",
-                "notify": "mobile_app_cellulare_marco",
-                "sveglia": "sensor.cellulare_marco_prossimo_allarme",
-                "cellulare": "331000000"
-            },
-            {
-                "person": "person.serena",
-                "battery": "sensor.cellulare_serena_livello_della_batteria",
-                "notify": "mobile_app_samsung_s21",
-                "sveglia": "none",
-                "cellulare": "335000000"
-            }
-        ]
-        {% endmacro%}
-        ```
+      ```
+      {% macro persons() %}
+      [
+          {
+              "person": "person.marco",
+              "battery": "sensor.cellulare_marco_battery_level",
+              "notify": "mobile_app_cellulare_marco",
+              "sveglia": "sensor.cellulare_marco_prossimo_allarme",
+              "cellulare": "331000000"
+          },
+          {
+              "person": "person.serena",
+              "battery": "sensor.cellulare_serena_livello_della_batteria",
+              "notify": "mobile_app_samsung_s21",
+              "sveglia": "none",
+              "cellulare": "335000000"
+          }
+      ]
+      {% endmacro%}
+      ```
 
-        In questa sezione, elencheremo i nostri media player utilizzati per le notifiche. Assicurati di inserire correttamente i media player selezionati per le notifiche Alexa e TTS (ad esempio, Google), seguendo attentamente la sintassi corretta.
+      In questa sezione, elencheremo i nostri media player utilizzati per le notifiche. Assicurati di inserire correttamente i media player selezionati per le notifiche Alexa e TTS (ad esempio, Google), seguendo attentamente la sintassi corretta.
 
-        ```
-        {% macro media_players(type) %}
-            {% set list_media = 
-                [
-                    'media_player.camera',
-                    'media_player.studio',
-                    'media_player.googlehome_cameretta',
-                    'media_player.googlehome_bagno',
-                    'media_player.googlehome_cucina',
-                    'media_player.googlehome_salone'
-                ]
-            %}
-            {% for integrations in integration_entities(type) if integrations in list_media %}
-                {{ integrations }}
-            {% endfor %}
-        {% endmacro %}
-        ```
+      ```
+      {% macro media_players(type) %}
+          {% set list_media = 
+              [
+                  'media_player.camera',
+                  'media_player.studio',
+                  'media_player.googlehome_cameretta',
+                  'media_player.googlehome_bagno',
+                  'media_player.googlehome_cucina',
+                  'media_player.googlehome_salone'
+              ]
+          %}
+          {% for integrations in integration_entities(type) if integrations in list_media %}
+              {{ integrations }}
+          {% endfor %}
+      {% endmacro %}
+      ```
 
 ##### 2. Packages
 
