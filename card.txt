@@ -987,21 +987,21 @@ custom_fields:
                         opacityTo: 1
                         inverseColors: true
                   series:
-                    - color: var(--input-fill-color)
+                    - color: '#87DBED'
                       entity: sensor.cycles_day_lavatrice
                       name: Lavaggi
                       type: column
                       group_by:
                         func: max
                         duration: 24h
-                    - color: var(--state-icon-active-color)
+                    - color: '#009AAF'
                       entity: sensor.energy_day_lavatrice
                       type: column
                       name: Consumo
                       group_by:
                         func: max
                         duration: 24h
-                    - color: var(--state-icon-color)
+                    - color: Cyan
                       entity: sensor.time_day_lavatrice
                       name: Tempo
                       type: column
