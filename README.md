@@ -26,6 +26,9 @@ https://github.com/Home-Assistant-Pro-Team/Smart-Laundry-System---Lavatrice/asse
 
 Benvenuto al nuovo capitolo dedicato agli elettrodomestici, con un focus speciale sulla lavatrice, uno degli elettrodomestici più comuni. In questo pacchetto, oltre a fornire statistiche dettagliate, ci immergeremo in un approccio avanzato alle notifiche, presentando anche una nuova card.
 
+
+![-](example/Screenshot.png)
+
 ## **Requisiti**
 
 - [HomeAssitant release 2023.12.1](https://www.home-assistant.io/blog/2023/12/06/release-202312/)

@@ -12,9 +12,9 @@ styles:
     - grid-template-rows: repeat(2, 1fr)
   custom_fields:
     statis:
-      - margin-top: '-40%'
+      - margin-top: '-20%'
     icon:
-      - margin-top: '-56%'
+      - margin-top: '-45%'
       - margin-left: 5%
       - width: 150%
 custom_fields:
@@ -902,6 +902,39 @@ custom_fields:
                                             confirmation:
                                               text: Eseguo il reset statistiche
                                             action: toggle
+                                    - type: horizontal-stack
+                                      cards:
+                                        - type: custom:mushroom-template-card
+                                          primary: Costo energia
+                                          entity: input_number.costo_energia_casa
+                                          secondary: 'Impostato: {{states(entity)|float(0)}} €'
+                                          icon: mdi:power-plug
+                                          tap_action:
+                                            action: fire-dom-event
+                                            browser_mod:
+                                              service: browser_mod.more_info
+                                              data:
+                                                entity: input_number.soglia_lavoro_lavatrice_w
+                                                ignore_popup_card: true
+                                          style: |
+                                            ha-card {  
+                                              background: var(--ha-card-background);
+                                              border: 100px; 
+                                              border-radius: 0px;
+                                              }
+                                        - type: custom:mushroom-number-card
+                                          display_mode: buttons
+                                          secondary_info: none
+                                          entity: input_number.costo_energia_casa
+                                          layout: horizontal
+                                          primary_info: none
+                                          icon_type: none
+                                          style: |
+                                            ha-card {  
+                                              background: var(--ha-card-background);
+                                              border: 100px; 
+                                              border-radius: 0px;
+                                              }
                 - type: custom:mushroom-chips-card
                   chips:
                     - type: conditional
@@ -954,21 +987,21 @@ custom_fields:
                         opacityTo: 1
                         inverseColors: true
                   series:
-                    - color: var(--input-fill-color)
+                    - color: '#87DBED'
                       entity: sensor.cycles_day_lavatrice
                       name: Lavaggi
                       type: column
                       group_by:
                         func: max
                         duration: 24h
-                    - color: var(--state-icon-active-color)
+                    - color: '#009AAF'
                       entity: sensor.energy_day_lavatrice
                       type: column
                       name: Consumo
                       group_by:
                         func: max
                         duration: 24h
-                    - color: var(--state-icon-color)
+                    - color: Cyan
                       entity: sensor.time_day_lavatrice
                       name: Tempo
                       type: column
@@ -1235,4 +1268,3 @@ custom_fields:
       `;
       }
     ]]]
-    
