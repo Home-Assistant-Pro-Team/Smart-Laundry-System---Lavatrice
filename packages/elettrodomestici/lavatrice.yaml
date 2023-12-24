@@ -99,7 +99,7 @@ utility_meter:
     source: sensor.energy_kwh_lavatrice
     cycle: daily
   time_day_lavatrice:
-    source: sensor.stato_lavatrice
+    source: sensor.storico_lavatrice
     cycle: daily
   cycles_day_lavatrice:
     source: sensor.lavaggio_terminato
@@ -108,7 +108,7 @@ utility_meter:
     source: sensor.energy_kwh_lavatrice
     cycle: monthly
   time_month_lavatrice:
-    source: sensor.stato_lavatrice
+    source: sensor.storico_lavatrice
     cycle: monthly
   cycles_month_lavatrice:
     source: sensor.lavaggio_terminato
@@ -117,7 +117,7 @@ utility_meter:
     source: sensor.energy_kwh_lavatrice
     cycle: yearly
   time_year_lavatrice:
-    source: sensor.stato_lavatrice
+    source: sensor.storico_lavatrice
     cycle: yearly
   cycles_year_lavatrice:
     source: sensor.lavaggio_terminato
@@ -162,26 +162,10 @@ template:
         delay_off: "00:{{ states('input_number.tempo_innesco_lavatrice_m') | int(0) }}:00"
 
   - sensor:
-      - name: "Stato Lavatrice"
-        icon: mdi:history
+      - name: Storico Lavatrice
         state: >-
           {% from 'history_stats_custom.jinja' import time_on %}
           {{ time_on('binary_sensor.lavatrice') }}
-
-  - trigger:
-      - platform: time
-        at: "00:00:01"
-      - platform: state
-        entity_id:
-          - binary_sensor.lavatrice
-          - script.reset_sensori_lavatrice
-        from: "on"
-        to: "off"
-        for:
-          seconds: 2
-    sensor:
-      - name: Storico Lavatrice
-        state: "{{ now().strftime('%d/%m/%Y %H:%M') }}"
         attributes:
           Settimanale: >-
             {% from 'history_stats_custom.jinja' import storico_statistiche, history %} 
@@ -190,7 +174,7 @@ template:
             {% set costo = (consumo * states('input_number.costo_energia_casa') | float(0)) | round(2, default=0) %}
             {% set cicli = states('sensor.cycles_day_lavatrice') %}
             {% set tempo = history(states('sensor.time_day_lavatrice')) | trim %}
-            {% set reset = trigger.entity_id == 'script.reset_sensori_lavatrice' %}
+            {% set reset = now() == state_attr('script.reset_sensori_lavatrice', 'last_triggered') + timedelta(milliseconds=250) %}
             {{ storico_statistiche('giorni', this_entity, costo, consumo, cicli, tempo, reset) | from_json }}
           Mensile: >-
             {% from 'history_stats_custom.jinja' import storico_statistiche, history %} 
@@ -199,7 +183,7 @@ template:
             {% set costo = (consumo * states('input_number.costo_energia_casa') | float(0)) | round(2, default=0) %}
             {% set cicli = states('sensor.cycles_month_lavatrice') %}
             {% set tempo =  history(states('sensor.time_month_lavatrice')) | trim %}
-            {% set reset = trigger.entity_id == 'script.reset_sensori_lavatrice' %}
+            {% set reset = now() == state_attr('script.reset_sensori_lavatrice', 'last_triggered') + timedelta(milliseconds=250) %}
             {{ storico_statistiche('mesi', this_entity, costo, consumo, cicli, tempo, reset) | from_json }}
 
   # Lavaggio Iniziato
