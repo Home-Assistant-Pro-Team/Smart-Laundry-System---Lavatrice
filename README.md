@@ -1,5 +1,5 @@
 
-`- Version: 1.0 -`
+`- Version: 1.2 -`
 
 ### **Supportaci**
 
@@ -21,6 +21,7 @@ https://github.com/Home-Assistant-Pro-Team/Smart-Laundry-System---Lavatrice/asse
 - [Funzionalità](#funzionalità)
 - [Installazione](#installazione)
 - [Info Card](#card)
+- [Change log](#change-log)
 
 ## **Introduzione**
 
@@ -200,6 +201,12 @@ La card offre una panoramica dettagliata delle attività della lavatrice con un 
   - **Spegni switch**: Se attivato, questo opzione spegne lo switch collegato alla lavatrice al termine del lavaggio.
   - **Reset contatori statistiche**: Questo pulsante consente di azzerare tutte le statistiche presenti nella card.
     ![-](example/Screenshot8.png)
+
+## **Change Log**
+
+**Versione: 1.2**
+
+- Recupero e ripristino volumi nelle notifiche media_player
 
 ## **Supportaci**
 

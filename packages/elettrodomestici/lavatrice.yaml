@@ -265,7 +265,7 @@ template:
               minutes: 1
           - alias: >-
               Push: solo persone che si trovano in casa altrimenti tutti
-              Media Player: Solo se persone presenti altrimenti imposta per attendere rientro in casa (da fare)
+              Media Player: Solo se persone presenti altrimenti imposta per attendere rientro in casa
             event: elettrodomestici
             event_data:
               push: "true"
@@ -276,7 +276,7 @@ template:
                 {% from 'history_stats_custom.jinja' import last_use %}
                 Lavaggio di {{ last_use('sensor.lavaggio_iniziato', 'sensor.lavaggio_terminato', 'binary_sensor.lavatrice') | trim }} terminato in vostra assenza
               notification_icon: "mdi:washing-machine"
-              media_player: "{{ 'true' if person_home | count > 0 else 'None' }}"
+              #media_player: "{{ 'true' if person_home | count > 0 else 'None' }}"
               action1: "clear_notification_lavatrice"
               title1: Conferma panni ritirati
           - alias: Avvia timer per conferma alexa
@@ -335,7 +335,7 @@ template:
               seconds: 1
           - alias: >-
               Push: solo persone che si trovano in casa altrimenti tutti
-              Media Player: Solo se persone presenti altrimenti imposta per attendere rientro in casa (da fare)
+              Media Player: Solo se persone presenti altrimenti imposta per attendere rientro in casa 
             event: elettrodomestici
             event_data:
               push: "true"
@@ -504,8 +504,7 @@ automation:
     mode: parallel
     trigger:
       - platform: state
-        entity_id:
-          - binary_sensor.lavatrice
+        entity_id: binary_sensor.lavatrice
         from: "on"
         to: "off"
         for:
@@ -537,8 +536,7 @@ automation:
             event_data:
               event_id: panni_lavatrice
           - platform: state
-            entity_id:
-              - binary_sensor.lavatrice
+            entity_id: "binary_sensor.lavatrice"
             to: "on"
       - if: "{{ 'ResponseYes' == wait.trigger.event.data.event_response or wait.trigger.entity_id == 'binary_sensor.lavatrice' }}"
         then:
