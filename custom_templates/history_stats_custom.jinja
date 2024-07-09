@@ -15,7 +15,7 @@
 {# Tempo di utilizzo da passare ad utility_meter #}
 {% macro time_on(entity_id) %}
   {% if not is_state(entity_id, ['off', 'unavailable', 'unknown']) and states[entity_id].last_changed is defined %}
-    {{ (as_timestamp(now()) - as_timestamp(states[entity_id].last_changed)) / 3600 }}
+    {{ ((now() - states[entity_id].last_changed).total_seconds() / 3600)|round(2) }}
   {% else %}
     0
   {% endif %}
@@ -24,25 +24,21 @@
 {# Tempo di utilizzo da passare ad utility_meter con stato #}
 {% macro sensor_time_on(entity_id, state) %}
   {% if is_state(entity_id, state) and states[entity_id].last_changed is defined %}
-    {{ (as_timestamp(now()) - as_timestamp(states[entity_id].last_changed)) / 3600 }}
+    {{ ((now() - states[entity_id].last_changed).total_seconds() / 3600) }}
   {% else %}
     0
   {% endif %}
 {% endmacro %}
 
+
 {# converte tempo di utility_meter in un modo più amichevole #}
 {% macro history(entity_id) %}
-  {% set time = entity_id | float(0) %}
-  {% set minutes = ((time % 1) * 60) | int(0) %}
-  {% set hours = (time - (time % 1)) | int(0) %}
-  {% set days = (hours // 24) | int(0) %}
-  {% if days > 0 %}
-    {{ days }}d {{ hours - (days * 24) }}h {{ minutes }}m
-  {% elif hours > 0 %}
-    {{ hours }}h {{ minutes }}m
-  {% else %}
-    {{ minutes }}min
-  {% endif %}
+{% set cent_minutes = entity_id|float(0) %}
+{% set days = (entity_id|float(0) / 24) | int %}
+{% set remaining_hours = (entity_id|float(0) % 24) %}
+{% set hours = remaining_hours | int %}
+{% set minutes = ((remaining_hours - hours ) * 60) | int(0) %}
+  {{ days ~ 'd' if days > 0 }} {{ hours ~ 'h' if hours > 0}} {{ minutes ~ 'min' }}
 {% endmacro %}
 
 {###########################################################
@@ -50,6 +46,7 @@
 ###########################################################}
 
 {# Storico giorni della settimana e mensile #}
+
 {% macro storico_statistiche(periodo, this_entity, costo, consumo, cicli, tempo, reset) %}
 {% if periodo == 'mesi' %}
   {% set periodo = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"] %}

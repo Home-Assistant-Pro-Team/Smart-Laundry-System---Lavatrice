@@ -70,8 +70,8 @@ custom_fields:
 
                             |:--------|:----------:|:-------------:|:-----:|:--:
 
-                            | <b>Ultimo|{{ ((states[state_attr('sensor.energy_day_lavatrice', 'source')].state | float(0) - state_attr('sensor.lavaggio_iniziato','consumo_iniziale')|float(0)) * (states('input_number.costo_energia_casa') | float(0))) | round(2, default=0)}} € 
-                            | {{ (states[state_attr('sensor.energy_day_lavatrice', 'source')].state | float(0) - state_attr('sensor.lavaggio_iniziato', 'consumo_iniziale') |float(0)) | round(2)}} kWh
+                            | <b>Ultimo|{{ ((states('sensor.energy_kwh_lavatrice') | float(0) - state_attr('sensor.lavaggio_iniziato','consumo_iniziale')|float(0)) * (states('input_number.costo_energia_casa') | float(0))) | round(2, default=0)}} € 
+                            | {{ (states('sensor.energy_kwh_lavatrice') | float(0) - state_attr('sensor.lavaggio_iniziato', 'consumo_iniziale') |float(0)) | round(2)}} kWh
                             | {{last_use('sensor.lavaggio_iniziato','sensor.lavaggio_terminato','binary_sensor.lavatrice')|trim}} 
                             | {{states(state_attr('sensor.energy_kwh_lavatrice', 'source')) | int(0) ~ ' W' if is_state('binary_sensor.lavatrice', 'on')}} 
                             |
@@ -118,7 +118,7 @@ custom_fields:
 
                             ---
 
-                            Ultimo reset statistiche il {{as_local(state_attr('script.reset_sensori_lavatrice', 'last_triggered')).strftime('%d/%m/%Y %H:%M') }}
+                            Ultimo reset statistiche il {{as_local(state_attr('script.reset_sensori_lavatrice', 'last_triggered')).strftime('%d/%m/%Y %H:%M') }}  
                           card_mod:
                             style:
                               ha-markdown $: |

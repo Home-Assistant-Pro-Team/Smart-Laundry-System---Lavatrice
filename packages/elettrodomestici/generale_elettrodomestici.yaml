@@ -1,9 +1,0 @@
-input_number:
-  costo_energia_casa:
-    name: Costo Energia Casa
-    min: 0.000
-    max: 99999.000
-    unit_of_measurement: "€"
-    step: 0.01
-    mode: box
-    icon: mdi:currency-eur

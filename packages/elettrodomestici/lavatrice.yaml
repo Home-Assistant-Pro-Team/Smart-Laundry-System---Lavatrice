@@ -276,7 +276,6 @@ template:
                 {% from 'history_stats_custom.jinja' import last_use %}
                 Lavaggio di {{ last_use('sensor.lavaggio_iniziato', 'sensor.lavaggio_terminato', 'binary_sensor.lavatrice') | trim }} terminato in vostra assenza
               notification_icon: "mdi:washing-machine"
-              #media_player: "{{ 'true' if person_home | count > 0 else 'None' }}"
               action1: "clear_notification_lavatrice"
               title1: Conferma panni ritirati
           - alias: Avvia timer per conferma alexa
@@ -548,3 +547,4 @@ automation:
           - service: timer.start
             target:
               entity_id: timer.conferma_alexa_lavatrice
+ 
