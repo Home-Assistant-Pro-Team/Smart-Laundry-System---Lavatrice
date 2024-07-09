@@ -212,7 +212,7 @@ template:
       - name: Lavaggio Iniziato
         state: "{{ as_timestamp(now()) }}"
         attributes:
-          consumo_iniziale: "{{ states[state_attr('sensor.energy_day_lavatrice', 'source')].state }}"
+          consumo_iniziale: "{{ states('sensor.energy_kwh_lavatrice') | float(0) }}"
     action:
       - alias: Togli stato panni da ritirare
         service: input_boolean.turn_off
